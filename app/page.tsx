@@ -1,19 +1,37 @@
-import { Button } from "@/components/ui/button"
+import { Header } from "@/components/header";
+import { ShoppingPreferences } from "@/components/shopping-preferences";
+import { ShopDetailsSheet } from "@/components/shop-details-sheet";
+import { CommandBar } from "@/components/command-bar";
 
 export default function Page() {
   return (
-    <div className="flex min-h-svh p-6">
-      <div className="flex max-w-md min-w-0 flex-col gap-4 text-sm leading-loose">
-        <div>
-          <h1 className="font-medium">Project ready!</h1>
-          <p>You may now add components and start building.</p>
-          <p>We&apos;ve already added the button component for you.</p>
-          <Button className="mt-2">Button</Button>
+    <main className="relative min-h-screen overflow-hidden bg-background">
+      {/* Map placeholder — replaced with Mapbox in Phase 2 */}
+      <div className="absolute inset-0 bg-background">
+        <div
+          className="absolute inset-0 opacity-10 dark:opacity-20"
+          style={{
+            backgroundImage: `radial-gradient(circle at 30% 50%, #00d26a22 0%, transparent 50%),
+                              radial-gradient(circle at 70% 30%, #3b82f622 0%, transparent 40%)`,
+          }}
+        />
+      </div>
+
+      {/* Header */}
+      <Header />
+
+      {/* Left + Right panels */}
+      <div className="fixed inset-x-4 top-18 bottom-28 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 pointer-events-none">
+        <div className="pointer-events-auto w-full sm:w-72 shrink-0">
+          <ShoppingPreferences />
         </div>
-        <div className="font-mono text-xs text-muted-foreground">
-          (Press <kbd>d</kbd> to toggle dark mode)
+        <div className="pointer-events-auto w-full sm:w-80">
+          <ShopDetailsSheet />
         </div>
       </div>
-    </div>
-  )
+
+      {/* Command bar */}
+      <CommandBar />
+    </main>
+  );
 }
