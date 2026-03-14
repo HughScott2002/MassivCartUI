@@ -1,11 +1,12 @@
-import { Header } from "@/components/header";
-import { ShoppingPreferences } from "@/components/shopping-preferences";
-import { ShopDetailsSheet } from "@/components/shop-details-sheet";
-import { CommandBar } from "@/components/command-bar";
+import { Header } from "@/components/header"
+import { ShoppingPreferences } from "@/components/shopping-preferences"
+import { ShopDetailsSheet } from "@/components/shop-details-sheet"
+import { CommandBar } from "@/components/command-bar"
 
 export default function Page() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-background">
+      
       {/* Map placeholder — replaced with Mapbox in Phase 2 */}
       <div className="absolute inset-0 bg-background">
         <div
@@ -21,8 +22,8 @@ export default function Page() {
       <Header />
 
       {/* Left + Right panels */}
-      <div className="fixed inset-x-4 top-18 bottom-28 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 pointer-events-none">
-        <div className="pointer-events-auto w-full sm:w-72 shrink-0">
+      <div className="pointer-events-none fixed inset-x-4 top-18 bottom-28 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div className="pointer-events-auto w-full shrink-0 sm:w-72">
           <ShoppingPreferences />
         </div>
         <div className="pointer-events-auto w-full sm:w-80">
@@ -33,5 +34,5 @@ export default function Page() {
       {/* Command bar */}
       <CommandBar />
     </main>
-  );
+  )
 }
