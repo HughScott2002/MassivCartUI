@@ -31,12 +31,12 @@ export function GridMenu({ selectedType = "all", onSelect }: GridMenuProps) {
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="p-2.5 rounded-full bg-black/10 dark:bg-white/10 hover:bg-black/20 dark:hover:bg-white/20 transition-colors border border-border"
+        className="p-2.5 rounded-full bg-white/90 dark:bg-white/10 backdrop-blur-sm hover:bg-white dark:hover:bg-white/20 transition-colors border border-gray-200 dark:border-border shadow-sm"
         title="Filter by store type"
       >
         <div className="grid grid-cols-3 gap-0.5 w-4 h-4">
           {[...Array(9)].map((_, i) => (
-            <div key={i} className="w-1 h-1 bg-foreground rounded-full opacity-70" />
+            <div key={i} className="w-1 h-1 bg-gray-600 dark:bg-foreground rounded-full" />
           ))}
         </div>
       </button>
