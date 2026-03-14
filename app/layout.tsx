@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next"
 import { Geist_Mono, Figtree } from "next/font/google"
-// import { Analytics } from "@vercel/analytics/next"
+import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from "@/lib/utils"
@@ -76,7 +76,7 @@ export default function RootLayout({
       <body>
         <ThemeProvider defaultTheme="dark">
           {children}
-          {/* <Analytics /> */}
+          <Analytics />
         </ThemeProvider>
       </body>
     </html>
