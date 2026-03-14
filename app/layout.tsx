@@ -1,4 +1,5 @@
-import { Geist, Geist_Mono, Figtree } from "next/font/google"
+import type { Metadata } from "next"
+import { Geist_Mono, Figtree } from "next/font/google"
 
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -10,6 +11,41 @@ const fontMono = Geist_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
 })
+
+export const metadata: Metadata = {
+  title: {
+    default: "MASSIV Cart AI",
+    template: "%s | MASSIV Cart AI",
+  },
+  description:
+    "Realtime price intelligence for almost anything. Find the cheapest prices near you, upload receipts to earn Scout Points, and let AI do the shopping math.",
+  keywords: ["price tracker", "Jamaica", "cheapest prices", "AI shopping", "receipt scanner", "price intelligence"],
+  authors: [{ name: "MASSIV Cart AI" }],
+  openGraph: {
+    title: "MASSIV Cart AI",
+    description: "Find the cheapest grocery prices near you in Jamaica.",
+    siteName: "MASSIV Cart AI",
+    locale: "en_JM",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "MASSIV Cart AI",
+    description: "Find the cheapest grocery prices near you in Jamaica.",
+  },
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#00d26a" },
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+  ],
+  icons: {
+    icon: [
+      { url: "/icon-light-32x32.png", media: "(prefers-color-scheme: light)" },
+      { url: "/icon-dark-32x32.png", media: "(prefers-color-scheme: dark)" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    apple: "/apple-icon.png",
+  },
+}
 
 export default function RootLayout({
   children,
