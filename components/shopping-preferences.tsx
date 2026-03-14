@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
-import { LayoutDashboard, Store, DollarSign } from "lucide-react"
+import { useState } from "react";
+import { LayoutDashboard, Store } from "lucide-react";
+import { BudgetPopup } from "@/components/budget-popup";
 
 const savingsOptions = [
   { label: "Quick Trip", maxStores: 1, radiusKm: 3 },
@@ -11,9 +12,12 @@ const savingsOptions = [
 ]
 
 export function ShoppingPreferences() {
-  const [activeTab, setActiveTab] = useState<"dashboard" | "route">("dashboard")
-  const [savingsMode, setSavingsMode] = useState(2)
-  const selected = savingsOptions[savingsMode]
+  const [activeTab, setActiveTab] = useState<"dashboard" | "route">("dashboard");
+  const [budgetOpen, setBudgetOpen] = useState(false);
+  const [budget, setBudget] = useState(0);
+  const cartTotal = 0; // Wire to cart context when available
+  const [savingsMode, setSavingsMode] = useState(2);
+  const selected = savingsOptions[savingsMode];
 
   return (
     <div className="overflow-hidden rounded-2xl border border-black/10 bg-card text-foreground shadow-xl backdrop-blur-md dark:border-white/10">
@@ -43,7 +47,21 @@ export function ShoppingPreferences() {
         </button>
       </div>
 
-      <div className="space-y-4 p-4">
+        {/* Budget summary bar - click anywhere to open popup and edit */}
+        <button
+          type="button"
+          onClick={() => setBudgetOpen(true)}
+          className="w-full bg-primary px-4 py-3 flex flex-col gap-1 text-left cursor-pointer hover:bg-primary/90 transition-colors"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-white uppercase tracking-wider">Weekly Budget</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-lg font-bold text-white">J${budget || 0}</span>
+            <span className="text-sm font-bold text-white">Cart: J${cartTotal.toFixed(0)}</span>
+          </div>
+        </button>
+      <div className="p-4 space-y-4">
         {activeTab === "dashboard" ? (
           <>
             {/* Scout Points placeholder */}
@@ -60,24 +78,6 @@ export function ShoppingPreferences() {
               </div>
             </div>
 
-            {/* Budget widget */}
-            <div className="space-y-2">
-              <p className="flex items-center gap-1 text-xs tracking-wider text-muted-foreground uppercase">
-                <DollarSign className="h-3 w-3" /> Weekly Budget
-              </p>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">J$</span>
-                <input
-                  type="number"
-                  placeholder="0"
-                  className="flex-1 rounded-lg border border-black/10 bg-black/5 px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none dark:border-white/10 dark:bg-white/5"
-                />
-              </div>
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Cart total</span>
-                <span>J$0</span>
-              </div>
-            </div>
           </>
         ) : (
           <>
@@ -114,6 +114,14 @@ export function ShoppingPreferences() {
           </>
         )}
       </div>
+
+      <BudgetPopup
+        open={budgetOpen}
+        onClose={() => setBudgetOpen(false)}
+        budget={budget}
+        onBudgetChange={setBudget}
+        currentSpend={cartTotal}
+      />
     </div>
   )
 }
