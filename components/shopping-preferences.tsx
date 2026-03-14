@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LayoutDashboard, Store, DollarSign } from "lucide-react";
+import { LayoutDashboard, Store } from "lucide-react";
 import { BudgetPopup } from "@/components/budget-popup";
 
 const savingsOptions = [
@@ -47,6 +47,20 @@ export function ShoppingPreferences() {
         </button>
       </div>
 
+        {/* Budget summary bar - click anywhere to open popup and edit */}
+        <button
+          type="button"
+          onClick={() => setBudgetOpen(true)}
+          className="w-full bg-primary px-4 py-3 flex flex-col gap-1 text-left cursor-pointer hover:bg-primary/90 transition-colors"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-white uppercase tracking-wider">Weekly Budget</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-lg font-bold text-white">J${budget || 0}</span>
+            <span className="text-sm font-bold text-white">Cart: J${cartTotal.toFixed(0)}</span>
+          </div>
+        </button>
       <div className="p-4 space-y-4">
         {activeTab === "dashboard" ? (
           <>
@@ -60,25 +74,6 @@ export function ShoppingPreferences() {
               </div>
             </div>
 
-            {/* Budget summary - opens popup */}
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                <DollarSign className="w-3 h-3" /> Weekly Budget
-              </p>
-              <button
-                onClick={() => setBudgetOpen(true)}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 hover:border-primary/50 transition-colors text-left"
-              >
-                <span className="text-sm font-medium text-foreground">
-                  J${budget || 0}
-                </span>
-                <span className="text-xs text-muted-foreground">Pop out</span>
-              </button>
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Cart total</span>
-                <span>J${cartTotal.toFixed(0)}</span>
-              </div>
-            </div>
           </>
         ) : (
           <>
@@ -114,7 +109,7 @@ export function ShoppingPreferences() {
       <BudgetPopup
         open={budgetOpen}
         onClose={() => setBudgetOpen(false)}
-        budget={budget || undefined}
+        budget={budget}
         onBudgetChange={setBudget}
         currentSpend={cartTotal}
       />
