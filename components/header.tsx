@@ -1,7 +1,9 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { Sun, Moon } from "lucide-react";
+import { Sun, Moon, LocateFixed } from "lucide-react";
+import { GridMenu } from "./grid-menu";
+import { NotificationBell } from "./notification-bell";
 
 export function Header() {
   const { resolvedTheme, setTheme } = useTheme();
@@ -20,11 +22,25 @@ export function Header() {
 
       {/* User actions - Top Right */}
       <div className="fixed top-4 right-4 z-30 flex items-center gap-2 sm:gap-3">
+        {/* Locate — flies map to user position (wired in Phase 2) */}
+        <button
+          className="p-2.5 rounded-full bg-black/10 dark:bg-white/10 hover:bg-black/20 dark:hover:bg-white/20 transition-colors border border-border"
+          title="Go to my location"
+        >
+          <LocateFixed className="w-4 h-4 text-foreground" />
+        </button>
+
+        {/* Store type filter */}
+        <GridMenu />
+
+        {/* Notifications */}
+        <NotificationBell />
+
         {/* Theme toggle */}
         <button
           onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-          className="p-2 rounded-full bg-black/10 dark:bg-white/10 hover:bg-black/20 dark:hover:bg-white/20 transition-colors"
-          title="Toggle theme (D)"
+          className="p-2.5 rounded-full bg-black/10 dark:bg-white/10 hover:bg-black/20 dark:hover:bg-white/20 transition-colors border border-border"
+          title="Toggle theme"
         >
           {resolvedTheme === "dark" ? (
             <Sun className="w-4 h-4 text-foreground" />

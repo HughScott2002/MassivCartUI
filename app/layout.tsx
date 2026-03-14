@@ -1,4 +1,4 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Geist_Mono, Figtree } from "next/font/google"
 
 import "./globals.css"
@@ -11,6 +11,13 @@ const fontMono = Geist_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
 })
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#00d26a" },
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+  ],
+}
 
 export const metadata: Metadata = {
   title: {
@@ -33,10 +40,6 @@ export const metadata: Metadata = {
     title: "MASSIV Cart AI",
     description: "Find the cheapest grocery prices near you in Jamaica.",
   },
-  themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#00d26a" },
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-  ],
   icons: {
     icon: [
       { url: "/icon-light-32x32.png", media: "(prefers-color-scheme: light)" },
