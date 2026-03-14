@@ -12,6 +12,7 @@ interface AuthContextValue {
   authReady: boolean; // true once initial session + is_admin have been resolved
   signIn: (email: string, password: string) => Promise<string | null>;
   signUp: (email: string, password: string, displayName: string) => Promise<string | null>;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   showAuthModal: boolean;
   requireAuth: (pendingFn: () => void) => void;
@@ -100,6 +101,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return error?.message ?? null;
   };
 
+  const signInWithGoogle = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin },
+    });
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
   };
@@ -111,7 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ session, user: session?.user ?? null, isAdmin, authReady, signIn, signUp, signOut, showAuthModal, requireAuth }}>
+    <AuthContext.Provider value={{ session, user: session?.user ?? null, isAdmin, authReady, signIn, signUp, signInWithGoogle, signOut, showAuthModal, requireAuth }}>
       {children}
       {showAuthModal && <AuthModal onClose={handleModalDismiss} />}
     </AuthContext.Provider>
