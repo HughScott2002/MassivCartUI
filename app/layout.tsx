@@ -3,6 +3,7 @@ import { Geist_Mono, Figtree } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
+import { AuthProvider } from "@/lib/auth-context"
 import { cn } from "@/lib/utils"
 
 const figtree = Figtree({ subsets: ["latin"], variable: "--font-sans" })
@@ -75,7 +76,9 @@ export default function RootLayout({
     >
       <body>
         <ThemeProvider defaultTheme="dark">
-          {children}
+          <AuthProvider>
+            {children}
+          </AuthProvider>
           <Analytics />
         </ThemeProvider>
       </body>

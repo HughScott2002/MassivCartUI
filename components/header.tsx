@@ -8,6 +8,7 @@ import {
 import { useState } from "react";
 import { GridMenu } from "./grid-menu";
 import { NotificationBell } from "./notification-bell";
+import { useAuth } from "@/lib/auth-context";
 
 const iconBtn =
   "p-2.5 rounded-full bg-white/90 dark:bg-white/10 backdrop-blur-sm hover:bg-white dark:hover:bg-white/20 transition-colors border border-gray-200 dark:border-border shadow-sm";
@@ -29,6 +30,7 @@ export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const { user, requireAuth, signOut } = useAuth();
 
   return (
     <>
@@ -96,9 +98,24 @@ export function Header() {
                   </button>
 
                   <div className="border-t border-border mt-1 pt-2">
-                    <button className="w-full px-4 py-2 bg-primary rounded-full text-white font-semibold text-sm hover:opacity-90 transition-opacity">
-                      SIGN UP
-                    </button>
+                    {user ? (
+                      <button
+                        onClick={signOut}
+                        className="w-full px-4 py-2 bg-muted rounded-full text-foreground font-semibold text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                      >
+                        <span className="w-6 h-6 rounded-full bg-primary text-white text-xs flex items-center justify-center font-bold">
+                          {(user.user_metadata?.display_name as string)?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase()}
+                        </span>
+                        Sign out
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => requireAuth(() => {})}
+                        className="w-full px-4 py-2 bg-primary rounded-full text-white font-semibold text-sm hover:opacity-90 transition-opacity"
+                      >
+                        SIGN UP
+                      </button>
+                    )}
                   </div>
                 </>
               ) : (
@@ -156,9 +173,26 @@ export function Header() {
             : <Moon className="w-4 h-4 text-gray-600 dark:text-foreground" />}
         </button>
 
-        <button className="px-4 py-2 bg-primary rounded-full text-white font-semibold text-sm border-2 border-white/20 hover:border-white/40 transition-colors">
-          SIGN UP
-        </button>
+        {user ? (
+          <button
+            onClick={signOut}
+            className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-full text-foreground font-semibold text-sm hover:bg-muted transition-colors"
+          >
+            <span className="w-6 h-6 rounded-full bg-primary text-white text-xs flex items-center justify-center font-bold">
+              {(user.user_metadata?.display_name as string)?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase()}
+            </span>
+            <span className="max-w-[100px] truncate">
+              {(user.user_metadata?.display_name as string) ?? user.email}
+            </span>
+          </button>
+        ) : (
+          <button
+            onClick={() => requireAuth(() => {})}
+            className="px-4 py-2 bg-primary rounded-full text-white font-semibold text-sm border-2 border-white/20 hover:border-white/40 transition-colors"
+          >
+            SIGN UP
+          </button>
+        )}
       </div>
     </>
   );

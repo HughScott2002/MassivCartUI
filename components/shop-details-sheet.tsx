@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Store, ShoppingBasket, Search } from "lucide-react";
+import { Store, ShoppingBasket, Search, X } from "lucide-react";
 
-export function ShopDetailsSheet() {
+export function ShopDetailsSheet({ onClose }: { onClose?: () => void }) {
   const [activeTab, setActiveTab] = useState<"store" | "list">("store");
 
   return (
@@ -32,6 +32,15 @@ export function ShopDetailsSheet() {
           <ShoppingBasket className="w-4 h-4" />
           My List
         </button>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="px-3 text-muted-foreground hover:text-foreground transition-colors"
+            aria-label="Close panel"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       {/* Content */}

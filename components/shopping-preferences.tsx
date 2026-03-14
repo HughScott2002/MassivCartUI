@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react";
-import { LayoutDashboard, Store } from "lucide-react";
+import { LayoutDashboard, Store, X } from "lucide-react";
 import { BudgetPopup } from "@/components/budget-popup";
 
 const savingsOptions = [
@@ -11,7 +11,7 @@ const savingsOptions = [
   { label: "Extreme", maxStores: 5, radiusKm: 40 },
 ]
 
-export function ShoppingPreferences() {
+export function ShoppingPreferences({ onClose }: { onClose?: () => void }) {
   const [activeTab, setActiveTab] = useState<"dashboard" | "route">("dashboard");
   const [budgetOpen, setBudgetOpen] = useState(false);
   const [budget, setBudget] = useState(0);
@@ -45,6 +45,15 @@ export function ShoppingPreferences() {
           <Store className="h-4 w-4" />
           Route
         </button>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="px-3 text-muted-foreground hover:text-foreground transition-colors"
+            aria-label="Close panel"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
         {/* Budget summary bar - click anywhere to open popup and edit */}
