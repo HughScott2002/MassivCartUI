@@ -50,7 +50,7 @@ export function CommandBar({ onScanReceipt }: CommandBarProps) {
   return (
     <div className="fixed inset-x-4 bottom-6 z-30">
       <div className="mx-auto max-w-2xl">
-        <div className="flex items-center gap-3 rounded-2xl border border-black/10 bg-card px-4 py-3 shadow-xl backdrop-blur-md dark:border-white/10">
+        <div className="flex h-14 items-center gap-3 rounded-2xl border border-border bg-card px-4 shadow-xl backdrop-blur-md">
           {/* Intent icon */}
           <Sparkles className="h-5 w-5 shrink-0 text-primary" />
 
@@ -77,14 +77,14 @@ export function CommandBar({ onScanReceipt }: CommandBarProps) {
             <button
               type="button"
               onClick={handleScan}
-              className="group relative flex shrink-0 items-center gap-2 overflow-hidden rounded-xl bg-green-600 px-4 py-2.5 text-sm font-medium text-white transition-all duration-300 ease-out hover:scale-[1.02] hover:bg-green-500 hover:shadow-xl hover:shadow-green-600/30 active:scale-[0.98]"
+              className="group relative flex shrink-0 items-center gap-2 overflow-hidden rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-white transition-all duration-300 ease-out hover:scale-[1.02] hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/30 active:scale-[0.98]"
             >
               <span className="relative">Scan Receipt</span>
               <Plus className="h-4 w-4 shrink-0" strokeWidth={2.5} />
             </button>
           ) : (
             /* Send button - shown when user has typed */
-            <button className="rounded-xl bg-primary p-2 text-white transition-colors hover:bg-primary/90">
+            <button className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-white transition-colors hover:bg-primary/90">
               <Send className="h-4 w-4" />
             </button>
           )}
