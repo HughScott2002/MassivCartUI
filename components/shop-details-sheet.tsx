@@ -9,12 +9,15 @@ interface ShopDetailsSheetProps {
   results?: SearchResult[];
   onFlyTo?: (lng: number, lat: number) => void;
   activeTab?: "store" | "list";
+  onTabChange?: (tab: "store" | "list") => void;
 }
 
-export function ShopDetailsSheet({ onClose, results = [], onFlyTo, activeTab: activeTabProp }: ShopDetailsSheetProps) {
+export function ShopDetailsSheet({ onClose, results = [], onFlyTo, activeTab: activeTabProp, onTabChange }: ShopDetailsSheetProps) {
   const [activeTabLocal, setActiveTabLocal] = useState<"store" | "list">("store");
   const activeTab = activeTabProp ?? activeTabLocal;
-  const setActiveTab = activeTabProp === undefined ? setActiveTabLocal : () => {};
+  const setActiveTab = (tab: "store" | "list") => {
+    onTabChange ? onTabChange(tab) : setActiveTabLocal(tab);
+  };
 
   return (
     <div className="rounded-2xl border border-black/10 dark:border-white/10 bg-card backdrop-blur-md text-foreground shadow-xl overflow-hidden flex flex-col">
