@@ -5,6 +5,15 @@ import { useQueryClient } from "@tanstack/react-query"
 import { Sparkles, ScanLine, Send, MapPin, ListPlus, X, CheckCircle, AlertCircle } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import type { SearchResult, ReceiptData, ReceiptItem } from "@/lib/types"
+import { DEMO_RESULTS } from "@/lib/demo-results"
+
+const KINGSTON_LAT = 17.9971
+const KINGSTON_LNG = -76.7936
+
+const PILL_SEARCH_TERMS = [
+  "rice", "chicken", "bread", "cooking oil",
+  "flour", "sugar", "milk", "beef",
+]
 
 type UploadState = "idle" | "scanning" | "processing" | "address" | "review" | "submitting" | "done"
 type ScanCategory = "receipt" | "prescription" | "gas_price" | "shopping_list"
@@ -17,6 +26,7 @@ interface Toast {
 
 interface CommandBarProps {
   savingsMode: number
+  activeTab: "store" | "list"
   userLocation: { lat: number; lng: number } | null
   onSearchResults: (results: SearchResult[]) => void
   onTabChange?: (tab: "store" | "list") => void
@@ -61,6 +71,7 @@ function ThreeDots() {
 
 export function CommandBar({
   savingsMode,
+  activeTab,
   userLocation,
   onSearchResults,
   onTabChange,
@@ -68,7 +79,7 @@ export function CommandBar({
 }: CommandBarProps) {
   const queryClient = useQueryClient()
   const [inputValue, setInputValue] = useState("")
-  const [intent, setIntent] = useState<"find" | "list">("find")
+  const intent = activeTab === "list" ? "list" : "find"
   const [isSearching, setIsSearching] = useState(false)
   const [cooldown, setCooldown] = useState(false)
   const [showCategoryChooser, setShowCategoryChooser] = useState(false)
@@ -236,6 +247,29 @@ export function CommandBar({
 
   const receiptTotal = receiptItems.reduce((s, i) => s + i.price * (i.quantity ?? 1), 0)
 
+  async function handleFindNearbyPill() {
+    onTabChange?.("store")
+    setIsSearching(true)
+    try {
+      const res = await fetch("/api/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          terms: PILL_SEARCH_TERMS,
+          savingsMode: 3,
+          userLat: userLocation?.lat ?? KINGSTON_LAT,
+          userLng: userLocation?.lng ?? KINGSTON_LNG,
+        }),
+      })
+      const data = await res.json() as SearchResult[]
+      onSearchResults(data.length > 0 ? data : DEMO_RESULTS)
+    } catch {
+      onSearchResults(DEMO_RESULTS)
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
   return (
     <div className="fixed inset-x-4 bottom-6 z-30">
       <div className="mx-auto max-w-2xl space-y-2">
@@ -294,8 +328,9 @@ export function CommandBar({
         {!showCategoryChooser && uploadState === "idle" && (
           <div className="flex items-center gap-2">
             <button
-              onClick={() => { setIntent("find"); onTabChange?.("store") }}
-              className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-medium shadow backdrop-blur-sm transition-colors ${
+              onClick={handleFindNearbyPill}
+              disabled={isSearching}
+              className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-medium shadow backdrop-blur-sm transition-colors disabled:opacity-60 ${
                 intent === "find"
                   ? "border-primary bg-primary text-white"
                   : "border-border bg-card/80 text-muted-foreground hover:bg-card hover:text-foreground"
@@ -304,7 +339,7 @@ export function CommandBar({
               <MapPin className="h-3 w-3" /> Find nearby
             </button>
             <button
-              onClick={() => { setIntent("list"); onTabChange?.("list") }}
+              onClick={() => onTabChange?.("list")}
               className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-medium shadow backdrop-blur-sm transition-colors ${
                 intent === "list"
                   ? "border-primary bg-primary text-white"

@@ -9,6 +9,7 @@ export interface SearchResultPrice {
   distance_km: number | null
   lat: number | null
   lng: number | null
+  place_id: string | null
 }
 
 export interface SearchResult {

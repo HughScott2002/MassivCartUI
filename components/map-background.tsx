@@ -89,9 +89,7 @@ export function MapBackground({
 
   const flyToImpl = useCallback((lng: number, lat: number) => {
     mapRef.current?.flyTo({ center: [lng, lat], zoom: 15, duration: 1800 });
-    onLocationChange({ lat, lng });
-    onAtLocationChange(true);
-  }, [onLocationChange, onAtLocationChange]);
+  }, []);
 
   const locateImpl = useCallback(() => {
     if (!navigator.geolocation) {

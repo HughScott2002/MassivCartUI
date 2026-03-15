@@ -9,6 +9,7 @@ import { MapBackground } from "@/components/map-background"
 import type { POI } from "@/lib/poi-provider"
 import { LayoutDashboard, ShoppingBasket, Store } from "lucide-react"
 import type { SearchResult } from "@/lib/types"
+import { DEMO_RESULTS } from "@/lib/demo-results"
 
 export default function Page() {
   const [leftOpen, setLeftOpen] = useState(true)
@@ -56,6 +57,39 @@ export default function Page() {
     return () => clearTimeout(t)
   }, [showPointsToast])
 
+  async function handleStoreSelect(poi: POI | null) {
+    setSelectedStoreId(poi?.id ?? null)
+    if (!poi) return
+    setRightTab("store")
+    try {
+      const res = await fetch("/api/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          terms: ["rice", "chicken", "bread", "cooking oil", "flour", "sugar", "milk", "beef"],
+          savingsMode: 1,
+          userLat: poi.lat,
+          userLng: poi.lng,
+        }),
+      })
+      const data = await res.json() as SearchResult[]
+      const filtered = data
+        .map(r => ({
+          ...r,
+          prices: r.prices.filter(p => p.place_id === poi.id),
+        }))
+        .filter(r => r.prices.length > 0)
+        .map(r => ({
+          ...r,
+          cheapest_price: r.prices[0].price,
+          cheapest_store: r.prices[0].store_name,
+        }))
+      setSearchResults(filtered.length > 0 ? filtered : (data.length > 0 ? data : DEMO_RESULTS))
+    } catch {
+      setSearchResults(DEMO_RESULTS)
+    }
+  }
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-background">
 
@@ -63,7 +97,7 @@ export default function Page() {
       <div className="absolute inset-0">
         <MapBackground
           selectedStoreId={selectedStoreId}
-          onStoreSelect={(poi: POI | null) => setSelectedStoreId(poi?.id ?? null)}
+          onStoreSelect={handleStoreSelect}
           activeCategory={activeCategory}
           flyToRef={flyToRef}
           locateRef={locateRef}
@@ -167,6 +201,7 @@ export default function Page() {
       {/* Command bar */}
       <CommandBar
         savingsMode={savingsMode}
+        activeTab={rightTab}
         userLocation={userLocation}
         onSearchResults={(results) => setSearchResults(results)}
         onTabChange={setRightTab}
