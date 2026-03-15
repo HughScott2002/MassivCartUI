@@ -20,6 +20,7 @@ export default function Page() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [, setAtLocation] = useState(false)
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
+  const [activeCategory, setActiveCategory] = useState("all")
   const [showPointsToast, setShowPointsToast] = useState(false)
 
   // Lifted state for CommandBar / ShoppingPreferences sync
@@ -64,7 +65,7 @@ export default function Page() {
         <MapBackground
           selectedStoreId={selectedStoreId}
           onStoreSelect={(poi: POI | null) => setSelectedStoreId(poi?.id ?? null)}
-          activeCategory="all"
+          activeCategory={activeCategory}
           flyToRef={flyToRef}
           locateRef={locateRef}
           onAtLocationChange={setAtLocation}
@@ -73,7 +74,7 @@ export default function Page() {
       </div>
 
       {/* Header */}
-      <Header />
+      <Header locateRef={locateRef} activeCategory={activeCategory} onCategoryChange={setActiveCategory} />
 
       {/* Left + Right panels — desktop: inline; mobile: overlay popups above everything */}
       <div className="pointer-events-none fixed inset-x-4 top-18 bottom-28 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between max-sm:inset-auto max-sm:top-auto max-sm:left-auto max-sm:right-auto max-sm:bottom-auto max-sm:contents">

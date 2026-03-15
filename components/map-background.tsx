@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import type { RefObject } from "react";
 import { useTheme } from "next-themes";
 import { useQuery } from "@tanstack/react-query";
-import Map, { Marker, NavigationControl } from "react-map-gl/mapbox";
+import Map, { Marker } from "react-map-gl/mapbox";
 import type { MapRef } from "react-map-gl/mapbox";
 import { Store, Pill, Package, Hammer, Fuel, MapPin } from "lucide-react";
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -218,8 +218,6 @@ export function MapBackground({
         style={{ width: "100%", height: "100%" }}
         mapStyle={mapStyle}
       >
-        <NavigationControl position="bottom-right" />
-
         {visiblePois.map((poi) => {
           const isSelected = poi.id === selectedStoreId;
           const color = CATEGORY_COLOR[poi.category];

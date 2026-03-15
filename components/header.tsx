@@ -24,6 +24,7 @@ import { GridMenu } from "./grid-menu"
 import { NotificationBell } from "./notification-bell"
 import { useAuth } from "@/lib/auth-context"
 import { ProfilePopup } from "./profile-popup"
+import { cn } from "@/lib/utils"
 
 const iconBtn =
   "p-2.5 rounded-full bg-white/90 dark:bg-white/10 backdrop-blur-sm hover:bg-white dark:hover:bg-white/20 transition-colors border border-gray-200 dark:border-border shadow-sm"
@@ -55,14 +56,21 @@ const storeTypes = [
   { id: "fuel", label: "Fuel", icon: Fuel, color: "text-amber-500" },
 ]
 
-export function Header() {
+export function Header({
+  locateRef,
+  activeCategory = "all",
+  onCategoryChange,
+}: {
+  locateRef?: React.RefObject<(() => void) | null>
+  activeCategory?: string
+  onCategoryChange?: (category: string) => void
+}) {
   const { resolvedTheme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => setMounted(true), [])
   const [showCategories, setShowCategories] = useState(false)
-  const [selectedCategory, setSelectedCategory] = useState("all")
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [profilePopupOpen, setProfilePopupOpen] = useState(false)
   const { user, requireAuth, signOut } = useAuth()
@@ -86,6 +94,20 @@ export function Header() {
             <span className="rounded-full bg-white px-1 text-primary">AI</span>
           </span>
         </div>
+
+        {/* Categories button — left of location */}
+        <div className="fixed top-4 right-28 z-30">
+          <GridMenu selectedType={activeCategory} onSelect={onCategoryChange} />
+        </div>
+
+        {/* Location button — left of burger */}
+        <button
+          onClick={() => locateRef?.current?.()}
+          className="fixed top-4 right-16 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-card border border-border text-foreground shadow-lg transition-colors hover:bg-muted"
+          aria-label="My location"
+        >
+          <LocateFixed className="h-4 w-4" />
+        </button>
 
         {/* Burger circle — right */}
         <button
@@ -112,11 +134,6 @@ export function Header() {
             <div className="fixed top-16 right-4 z-50 flex min-w-55 flex-col items-stretch gap-1 rounded-2xl border border-border bg-popover p-3 shadow-xl">
               {!showCategories ? (
                 <>
-                  <button className={rowBtn}>
-                    <LocateFixed className="h-4 w-4 shrink-0" />
-                    My location
-                  </button>
-
                   <button className={rowBtn}>
                     <Bell className="h-4 w-4 shrink-0" />
                     Notifications
@@ -154,13 +171,13 @@ export function Header() {
                       <div className="flex flex-col gap-1">
                         <button
                           type="button"
-                          className={`${rowBtn} justify-center`}
+                          className={rowBtn}
                           onClick={() => {
                             setMenuOpen(false)
                             setProfilePopupOpen(true)
                           }}
                         >
-                          <User className="h-4 w-4 shrink-0" />
+                          <User className="h-4 w-4 shrink-0 text-primary" />
                           User profile
                         </button>
                         <button
@@ -169,9 +186,9 @@ export function Header() {
                             signOut()
                             setMenuOpen(false)
                           }}
-                          className={`${rowBtn} justify-center text-destructive hover:bg-destructive/10`}
+                          className={cn(rowBtn, "text-destructive hover:bg-destructive/10")}
                         >
-                          <LogOut className="h-4 w-4 shrink-0" />
+                          <LogOut className="h-4 w-4 shrink-0 text-destructive" />
                           Sign out
                         </button>
                       </div>
@@ -202,13 +219,13 @@ export function Header() {
 
                   {storeTypes.map((type) => {
                     const Icon = type.icon
-                    const isSelected = selectedCategory === type.id
+                    const isSelected = activeCategory === type.id
                     return (
                       <button
                         key={type.id}
                         className={`${rowBtn} ${isSelected ? "bg-muted" : ""}`}
                         onClick={() => {
-                          setSelectedCategory(type.id)
+                          onCategoryChange?.(type.id)
                           setShowCategories(false)
                         }}
                       >
@@ -229,11 +246,11 @@ export function Header() {
 
       {/* ── Desktop: action buttons top-right ── */}
       <div className="fixed top-4 right-4 z-30 hidden items-center gap-2 sm:flex sm:gap-3">
-        <button className={iconBtn} title="Go to my location">
+        <button onClick={() => locateRef?.current?.()} className={iconBtn} title="Go to my location">
           <LocateFixed className="h-4 w-4 text-gray-600 dark:text-foreground" />
         </button>
 
-        <GridMenu />
+        <GridMenu selectedType={activeCategory} onSelect={onCategoryChange} />
 
         <NotificationBell />
 
