@@ -232,7 +232,7 @@ export function MapBackground({
               <div className="relative flex flex-col items-center cursor-pointer group">
                 {(zoom >= 15 || isSelected) && (
                   <div
-                    className={`mb-1 whitespace-nowrap px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-tight shadow-sm ${isSelected ? "bg-primary text-primary-foreground" : "bg-white/70 text-primary backdrop-blur-md"}`}
+                    className={`mb-1 whitespace-nowrap px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-tight shadow-sm ${isSelected ? "bg-primary text-primary-foreground" : "bg-card/95 text-foreground border border-border backdrop-blur-sm shadow-md"}`}
                   >
                     {poi.name}
                   </div>

@@ -16,16 +16,9 @@ interface Toast {
 }
 
 interface CommandBarProps {
-  rightTab: "store" | "list"
-  budget: string
-  onBudgetChange: (v: string) => void
   savingsMode: number
   userLocation: { lat: number; lng: number } | null
-  onSavingsModeChange: (v: number) => void
   onSearchResults: (results: SearchResult[]) => void
-  onAddToCart: (item: SearchResult) => void
-  onAddStore: () => void
-  onAddUnpriced?: (names: string[]) => void
   onTabChange?: (tab: "store" | "list") => void
   onPointsAwarded?: () => void
 }
@@ -75,6 +68,7 @@ export function CommandBar({
 }: CommandBarProps) {
   const queryClient = useQueryClient()
   const [inputValue, setInputValue] = useState("")
+  const [intent, setIntent] = useState<"find" | "list">("find")
   const [isSearching, setIsSearching] = useState(false)
   const [cooldown, setCooldown] = useState(false)
   const [showCategoryChooser, setShowCategoryChooser] = useState(false)
@@ -156,12 +150,11 @@ export function CommandBar({
     setSubmitError(null)
 
     try {
-      const total = receiptItems.reduce((s, i) => s + i.price * (i.quantity ?? 1), 0)
       const res = await fetch("/api/receipt/confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          receiptData: { ...receiptData, items: receiptItems, total },
+          receiptData: { ...receiptData, items: receiptItems, total: receiptTotal },
           userId: user.id,
           category: receiptData.imageType ?? selectedCategoryRef.current,
           storeAddress,
@@ -203,7 +196,7 @@ export function CommandBar({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message,
-          intent: "find",
+          intent,
           savingsMode,
           userLat: userLocation?.lat,
           userLng: userLocation?.lng,
@@ -301,14 +294,22 @@ export function CommandBar({
         {!showCategoryChooser && uploadState === "idle" && (
           <div className="flex items-center gap-2">
             <button
-              onClick={() => onTabChange?.("store")}
-              className="flex items-center gap-1.5 rounded-xl border border-border bg-card/80 px-3 py-1.5 text-xs font-medium text-muted-foreground shadow backdrop-blur-sm transition-colors hover:bg-card hover:text-foreground"
+              onClick={() => { setIntent("find"); onTabChange?.("store") }}
+              className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-medium shadow backdrop-blur-sm transition-colors ${
+                intent === "find"
+                  ? "border-primary bg-primary text-white"
+                  : "border-border bg-card/80 text-muted-foreground hover:bg-card hover:text-foreground"
+              }`}
             >
               <MapPin className="h-3 w-3" /> Find nearby
             </button>
             <button
-              onClick={() => onTabChange?.("list")}
-              className="flex items-center gap-1.5 rounded-xl border border-border bg-card/80 px-3 py-1.5 text-xs font-medium text-muted-foreground shadow backdrop-blur-sm transition-colors hover:bg-card hover:text-foreground"
+              onClick={() => { setIntent("list"); onTabChange?.("list") }}
+              className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-medium shadow backdrop-blur-sm transition-colors ${
+                intent === "list"
+                  ? "border-primary bg-primary text-white"
+                  : "border-border bg-card/80 text-muted-foreground hover:bg-card hover:text-foreground"
+              }`}
             >
               <ListPlus className="h-3 w-3" /> Add to list
             </button>

@@ -25,7 +25,6 @@ export default function Page() {
 
   // Lifted state for CommandBar / ShoppingPreferences sync
   const [rightTab, setRightTab] = useState<"store" | "list">("store")
-  const [budget, setBudget] = useState("")
   const [savingsMode, setSavingsMode] = useState(2)
 
   useEffect(() => {
@@ -167,15 +166,9 @@ export default function Page() {
 
       {/* Command bar */}
       <CommandBar
-        rightTab={rightTab}
-        budget={budget}
-        onBudgetChange={setBudget}
         savingsMode={savingsMode}
-        onSavingsModeChange={setSavingsMode}
         userLocation={userLocation}
         onSearchResults={(results) => setSearchResults(results)}
-        onAddToCart={() => {}}
-        onAddStore={() => {}}
         onTabChange={setRightTab}
         onPointsAwarded={() => setShowPointsToast(true)}
       />
