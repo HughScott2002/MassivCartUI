@@ -8,7 +8,7 @@ import { CommandBar } from "@/components/command-bar"
 import { MapBackground } from "@/components/map-background"
 import type { POI } from "@/lib/poi-provider"
 import { LayoutDashboard, ShoppingBasket, Store } from "lucide-react"
-import type { SearchResult } from "@/lib/types"
+import type { SearchResult, ListItem } from "@/lib/types"
 import { DEMO_RESULTS } from "@/lib/demo-results"
 
 export default function Page() {
@@ -21,8 +21,40 @@ export default function Page() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [, setAtLocation] = useState(false)
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
+  const [listItems, setListItems] = useState<ListItem[]>([])
   const [activeCategory, setActiveCategory] = useState("all")
   const [showPointsToast, setShowPointsToast] = useState(false)
+
+  function handleAddToList(
+    result: SearchResult,
+    price: { store_id: number; store_name: string; branch: string | null; price: number; lat: number | null; lng: number | null }
+  ) {
+    const item: ListItem = {
+      product_id: result.product_id,
+      store_id: price.store_id,
+      canonical_name: result.canonical_name,
+      category: result.category,
+      unit_type: result.unit_type,
+      price: price.price,
+      store_name: price.store_name,
+      branch: price.branch,
+      lat: price.lat,
+      lng: price.lng,
+    }
+    setListItems((prev) =>
+      prev.some((i) => i.product_id === item.product_id && i.store_id === item.store_id)
+        ? prev
+        : [...prev, item]
+    )
+  }
+
+  function handleRemoveFromList(item: ListItem) {
+    setListItems((prev) =>
+      prev.filter((i) => !(i.product_id === item.product_id && i.store_id === item.store_id))
+    )
+  }
+
+  const listTotal = listItems.reduce((sum, item) => sum + item.price, 0)
 
   // Lifted state for CommandBar / ShoppingPreferences sync
   const [rightTab, setRightTab] = useState<"store" | "list">("store")
@@ -117,6 +149,7 @@ export default function Page() {
               onClose={() => setLeftOpen(false)}
               savingsMode={savingsMode}
               onSavingsModeChange={setSavingsMode}
+              cartTotal={listTotal}
             />
           </div>
         )}
@@ -125,6 +158,9 @@ export default function Page() {
             <ShopDetailsSheet
               onClose={() => setRightOpen(false)}
               results={searchResults}
+              listItems={listItems}
+              onAddToList={handleAddToList}
+              onRemoveFromList={handleRemoveFromList}
               onFlyTo={(lng, lat) => flyToRef.current?.(lng, lat)}
               activeTab={rightTab}
               onTabChange={setRightTab}
@@ -203,7 +239,11 @@ export default function Page() {
         savingsMode={savingsMode}
         activeTab={rightTab}
         userLocation={userLocation}
-        onSearchResults={(results) => setSearchResults(results)}
+        onSearchResults={(results) => {
+          setSearchResults(results)
+          setRightTab("store")
+        }}
+        onAddToList={handleAddToList}
         onTabChange={setRightTab}
         onPointsAwarded={() => setShowPointsToast(true)}
       />

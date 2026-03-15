@@ -22,6 +22,20 @@ export interface SearchResult {
   prices: SearchResultPrice[]
 }
 
+/** One product from a specific store, as added to My List */
+export interface ListItem {
+  product_id: number
+  store_id: number
+  canonical_name: string
+  category: string | null
+  unit_type: string | null
+  price: number
+  store_name: string
+  branch: string | null
+  lat: number | null
+  lng: number | null
+}
+
 export interface ReceiptItem {
   name: string
   price: number

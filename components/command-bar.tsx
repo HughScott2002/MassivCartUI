@@ -4,7 +4,7 @@ import { useRef, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { Sparkles, ScanLine, Send, MapPin, ListPlus, X, CheckCircle, AlertCircle } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
-import type { SearchResult, ReceiptData, ReceiptItem } from "@/lib/types"
+import type { SearchResult, SearchResultPrice, ReceiptData, ReceiptItem } from "@/lib/types"
 import { DEMO_RESULTS } from "@/lib/demo-results"
 
 const KINGSTON_LAT = 17.9971
@@ -29,6 +29,7 @@ interface CommandBarProps {
   activeTab: "store" | "list"
   userLocation: { lat: number; lng: number } | null
   onSearchResults: (results: SearchResult[]) => void
+  onAddToList?: (result: SearchResult, price: SearchResultPrice) => void
   onTabChange?: (tab: "store" | "list") => void
   onPointsAwarded?: () => void
 }
@@ -74,6 +75,7 @@ export function CommandBar({
   activeTab,
   userLocation,
   onSearchResults,
+  onAddToList,
   onTabChange,
   onPointsAwarded,
 }: CommandBarProps) {
@@ -81,6 +83,7 @@ export function CommandBar({
   const [inputValue, setInputValue] = useState("")
   const intent = activeTab === "list" ? "list" : "find"
   const [isSearching, setIsSearching] = useState(false)
+  const [isListUploading, setIsListUploading] = useState(false)
   const [cooldown, setCooldown] = useState(false)
   const [showCategoryChooser, setShowCategoryChooser] = useState(false)
   const [uploadState, setUploadState] = useState<UploadState>("idle")
@@ -93,12 +96,13 @@ export function CommandBar({
   const [showPointsFloat, setShowPointsFloat] = useState(false)
   const toastIdRef = useRef(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const listFileInputRef = useRef<HTMLInputElement>(null)
   const selectedCategoryRef = useRef<ScanCategory>("receipt")
   const { user, requireAuth } = useAuth()
 
   const isUploading = uploadState === "scanning" || uploadState === "processing"
   const showScanPill =
-    inputValue.trim() === "" && uploadState === "idle" && !showCategoryChooser
+    inputValue.trim() === "" && uploadState === "idle" && !showCategoryChooser && !isListUploading
 
   function addToast(type: Toast["type"], message: string) {
     const id = ++toastIdRef.current
@@ -117,7 +121,11 @@ export function CommandBar({
   function handleCategorySelect(cat: ScanCategory) {
     selectedCategoryRef.current = cat
     setShowCategoryChooser(false)
-    fileInputRef.current?.click()
+    if (cat === "shopping_list") {
+      listFileInputRef.current?.click()
+    } else {
+      fileInputRef.current?.click()
+    }
   }
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -267,6 +275,71 @@ export function CommandBar({
       onSearchResults(DEMO_RESULTS)
     } finally {
       setIsSearching(false)
+    }
+  }
+
+  async function handleListFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ""
+    if (!file) return
+    if (!onAddToList) {
+      addToast("warn", "Adding to list is not available.")
+      return
+    }
+    setIsListUploading(true)
+    let added = 0
+    let noMatch = 0
+    try {
+      const text = await file.text()
+      const lines = text
+        .split(/\r?\n/)
+        .map((s) => s.trim())
+        .filter(Boolean)
+      if (lines.length === 0) {
+        addToast("warn", "File is empty or has no valid lines.")
+        return
+      }
+      addToast("success", `Searching stores for ${lines.length} item${lines.length === 1 ? "" : "s"}…`)
+      for (const line of lines) {
+        try {
+          const res = await fetch("/api/command", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              message: line,
+              intent: "find",
+              savingsMode,
+              userLat: userLocation?.lat,
+              userLng: userLocation?.lng,
+            }),
+          })
+          const data = (await res.json()) as { results?: SearchResult[]; error?: string }
+          const result = data.results?.[0]
+          const cheapest = result?.prices?.[0]
+          if (result && cheapest) {
+            onAddToList(result, cheapest)
+            added++
+          } else {
+            noMatch++
+          }
+        } catch {
+          noMatch++
+        }
+      }
+      onTabChange?.("list")
+      if (added > 0) {
+        addToast("success", `Added ${added} item${added === 1 ? "" : "s"} at best prices. Review in My List.`)
+      }
+      if (noMatch > 0) {
+        addToast("warn", `${noMatch} line${noMatch === 1 ? "" : "s"} had no matches.`)
+      }
+      if (added === 0 && noMatch > 0) {
+        addToast("warn", "No items could be matched. Try product names like \"rice\" or \"milk\".")
+      }
+    } catch {
+      addToast("error", "Could not read file. Use a .txt or .csv with one item per line.")
+    } finally {
+      setIsListUploading(false)
     }
   }
 
@@ -444,7 +517,7 @@ export function CommandBar({
           </div>
         )}
 
-        {/* Hidden file input */}
+        {/* Hidden file input (receipt/scan) */}
         <input
           ref={fileInputRef}
           type="file"
@@ -452,6 +525,14 @@ export function CommandBar({
           capture="environment"
           className="hidden"
           onChange={handleFileChange}
+        />
+        {/* Hidden file input (list upload: .txt, .csv) */}
+        <input
+          ref={listFileInputRef}
+          type="file"
+          accept=".txt,.csv,text/plain,text/csv"
+          className="hidden"
+          onChange={handleListFileChange}
         />
 
         {/* Main bar */}
