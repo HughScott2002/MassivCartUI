@@ -47,8 +47,7 @@ function getTierInfo(points: number) {
   const progress = next
     ? ((points - current.min) / (next.min - current.min)) * 100
     : 100
-  const remaining = next ? next.min - points : 0
-  return { current, next, progress: Math.min(progress, 100), remaining }
+  return { current, next, progress: Math.min(progress, 100) }
 }
 
 const savingsOptions = [

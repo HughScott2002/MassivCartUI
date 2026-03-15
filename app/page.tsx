@@ -8,6 +8,7 @@ import { CommandBar } from "@/components/command-bar"
 import { MapBackground } from "@/components/map-background"
 import type { POI } from "@/lib/poi-provider"
 import { LayoutDashboard, ShoppingBasket, Store } from "lucide-react"
+import type { SearchResult } from "@/lib/types"
 
 export default function Page() {
   const [leftOpen, setLeftOpen] = useState(true)
@@ -16,8 +17,10 @@ export default function Page() {
   const flyToRef  = useRef<((lng: number, lat: number) => void) | null>(null)
   const locateRef = useRef<(() => void) | null>(null)
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null)
-  const [, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [, setAtLocation]   = useState(false)
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
+  const [showPointsToast, setShowPointsToast] = useState(false)
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 639px)")
@@ -35,6 +38,18 @@ export default function Page() {
     mq.addEventListener("change", check)
     return () => mq.removeEventListener("change", check)
   }, [])
+
+  // Auto-open right panel when results arrive
+  useEffect(() => {
+    if (searchResults.length > 0) setRightOpen(true)
+  }, [searchResults])
+
+  // Auto-dismiss toast after 3s
+  useEffect(() => {
+    if (!showPointsToast) return
+    const t = setTimeout(() => setShowPointsToast(false), 3000)
+    return () => clearTimeout(t)
+  }, [showPointsToast])
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-background">
@@ -64,7 +79,11 @@ export default function Page() {
         )}
         {rightOpen && (
           <div className="pointer-events-auto w-full sm:w-80 sm:ml-auto max-sm:fixed max-sm:right-4 max-sm:top-20 max-sm:w-[min(calc(100%-2rem),340px)] max-sm:max-h-[65vh] max-sm:overflow-auto max-sm:z-[60] max-sm:shadow-2xl max-sm:rounded-2xl">
-            <ShopDetailsSheet onClose={() => setRightOpen(false)} />
+            <ShopDetailsSheet
+              onClose={() => setRightOpen(false)}
+              results={searchResults}
+              onFlyTo={(lng, lat) => flyToRef.current?.(lng, lat)}
+            />
           </div>
         )}
       </div>
@@ -127,8 +146,20 @@ export default function Page() {
         />
       )}
 
+      {/* +100 Scout Points toast */}
+      {showPointsToast && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-lg animate-in fade-in slide-in-from-bottom-2">
+          +100 Scout Points!
+        </div>
+      )}
+
       {/* Command bar */}
-      <CommandBar />
+      <CommandBar
+        onResults={(results) => setSearchResults(results)}
+        savingsMode={2}
+        userLocation={userLocation}
+        onPointsAwarded={() => setShowPointsToast(true)}
+      />
     </main>
   )
 }
