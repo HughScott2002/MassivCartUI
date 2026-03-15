@@ -46,23 +46,23 @@ export default function Page() {
       {/* Header */}
       <Header />
 
-      {/* Left + Right panels — on mobile shown as overlay when open */}
-      <div className="pointer-events-none fixed inset-x-4 top-18 bottom-28 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+      {/* Left + Right panels — desktop: inline; mobile: overlay popups above everything */}
+      <div className="pointer-events-none fixed inset-x-4 top-18 bottom-28 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between max-sm:inset-auto max-sm:top-auto max-sm:left-auto max-sm:right-auto max-sm:bottom-auto max-sm:contents">
         {leftOpen && (
-          <div className="pointer-events-auto w-full shrink-0 sm:w-72 max-sm:absolute max-sm:right-4 max-sm:top-16 max-sm:bottom-24 max-sm:w-[min(100%,340px)] max-sm:max-h-[70vh] max-sm:overflow-auto max-sm:z-30 max-sm:shadow-2xl">
+          <div className="pointer-events-auto w-full shrink-0 sm:w-72 max-sm:fixed max-sm:right-4 max-sm:top-20 max-sm:w-[min(calc(100%-2rem),340px)] max-sm:max-h-[65vh] max-sm:overflow-auto max-sm:z-[60] max-sm:shadow-2xl max-sm:rounded-2xl">
             <ShoppingPreferences onClose={() => setLeftOpen(false)} />
           </div>
         )}
         {rightOpen && (
-          <div className="pointer-events-auto w-full sm:w-80 sm:ml-auto max-sm:absolute max-sm:right-4 max-sm:top-16 max-sm:bottom-24 max-sm:w-[min(100%,340px)] max-sm:max-h-[70vh] max-sm:overflow-auto max-sm:z-30 max-sm:shadow-2xl">
+          <div className="pointer-events-auto w-full sm:w-80 sm:ml-auto max-sm:fixed max-sm:right-4 max-sm:top-20 max-sm:w-[min(calc(100%-2rem),340px)] max-sm:max-h-[65vh] max-sm:overflow-auto max-sm:z-[60] max-sm:shadow-2xl max-sm:rounded-2xl">
             <ShopDetailsSheet onClose={() => setRightOpen(false)} />
           </div>
         )}
       </div>
 
-      {/* Mobile: pills on the right — always visible, click to open/close panel */}
+      {/* Mobile: pills on the right — closer to top */}
       {isMobile && (
-        <div className="fixed right-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2 pointer-events-auto">
+        <div className="fixed right-4 top-28 z-[55] flex flex-col gap-2 pointer-events-auto">
           <button
             onClick={() => setLeftOpen((v) => !v)}
             className={`flex items-center justify-center w-11 h-11 rounded-full border shadow-lg transition-colors ${
@@ -72,7 +72,7 @@ export default function Page() {
             }`}
             aria-label={leftOpen ? "Close Dashboard" : "Open Dashboard"}
           >
-            <LayoutDashboard className="w-15 h-7" />
+            <LayoutDashboard className="w-5 h-5" />
           </button>
           <button
             onClick={() => setRightOpen((v) => !v)}
@@ -83,7 +83,7 @@ export default function Page() {
             }`}
             aria-label={rightOpen ? "Close Store and My List" : "Open Store and My List"}
           >
-            <Store className="w-15 h-7" />
+            <Store className="w-5 h-5" />
           </button>
         </div>
       )}
@@ -109,7 +109,7 @@ export default function Page() {
       {/* Mobile overlay backdrop when a panel is open */}
       {isMobile && (leftOpen || rightOpen) && (
         <div
-          className="fixed inset-0 bg-black/30 z-[25] pointer-events-auto sm:hidden"
+          className="fixed inset-0 bg-black/30 z-[50] pointer-events-auto sm:hidden"
           onClick={() => {
             if (leftOpen) setLeftOpen(false)
             if (rightOpen) setRightOpen(false)

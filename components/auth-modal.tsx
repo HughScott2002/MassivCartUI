@@ -1,8 +1,44 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { X } from "lucide-react";
+
+const PASSWORD_MIN_LENGTH = 12;
+
+function validatePassword(value: string): string[] {
+  const validationErrors: string[] = [];
+  if (value.length > 0 && value.length < PASSWORD_MIN_LENGTH) {
+    validationErrors.push("Must be at least 12 characters");
+  }
+  if (value.length > 0 && !/[A-Z]/.test(value)) {
+    validationErrors.push("Must include an uppercase letter");
+  }
+  if (value.length > 0 && !/[a-z]/.test(value)) {
+    validationErrors.push("Must include a lowercase letter");
+  }
+  if (value.length > 0 && !/\d/.test(value)) {
+    validationErrors.push("Must include a number");
+  }
+  if (value.length > 0 && !/[!@#$%^&*(),.?":{}|<>]/.test(value)) {
+    validationErrors.push("Must include a special character");
+  }
+  if (/\s/.test(value)) {
+    validationErrors.push("Password cannot contain spaces");
+  }
+  return validationErrors;
+}
+
+function isPasswordValid(value: string): boolean {
+  return (
+    value.length >= PASSWORD_MIN_LENGTH &&
+    /[A-Z]/.test(value) &&
+    /[a-z]/.test(value) &&
+    /\d/.test(value) &&
+    /[!@#$%^&*(),.?":{}|<>]/.test(value) &&
+    !/\s/.test(value)
+  );
+}
 
 interface AuthModalProps {
   onClose: () => void;
@@ -14,12 +50,19 @@ export function AuthModal({ onClose }: AuthModalProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const handlePasswordChange = useCallback((value: string) => {
+    setPassword(value);
+    setPasswordErrors(validatePassword(value));
+  }, []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (mode === "signup" && !isPasswordValid(password)) return;
     setLoading(true);
 
     const err =
@@ -33,6 +76,8 @@ export function AuthModal({ onClose }: AuthModalProps) {
       setError(err);
     }
   };
+
+  const passwordValid = mode === "signin" || isPasswordValid(password);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -92,15 +137,26 @@ export function AuthModal({ onClose }: AuthModalProps) {
             required
             className="border border-border bg-background rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/40"
           />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={6}
-            className="border border-border bg-background rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/40"
-          />
+          <div>
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => handlePasswordChange(e.target.value)}
+              required
+              minLength={mode === "signup" ? PASSWORD_MIN_LENGTH : 1}
+              className="border border-border bg-background rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/40 w-full"
+            />
+            {mode === "signup" && passwordErrors.length > 0 && (
+              <ul className="mt-2 space-y-0.5">
+                {passwordErrors.map((msg) => (
+                  <li key={msg} className="text-xs text-amber-600 dark:text-amber-500">
+                    • {msg}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
 
           {error && (
             <p className="text-red-500 text-xs">{error}</p>
@@ -108,7 +164,7 @@ export function AuthModal({ onClose }: AuthModalProps) {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !passwordValid}
             className="w-full py-2.5 bg-primary text-primary-foreground rounded-xl font-semibold text-sm disabled:opacity-60"
           >
             {loading ? "..." : mode === "signup" ? "Create account" : "Sign in"}
@@ -118,7 +174,7 @@ export function AuthModal({ onClose }: AuthModalProps) {
         <p className="text-center text-sm text-muted-foreground mt-4">
           {mode === "signup" ? "Already have an account?" : "No account yet?"}{" "}
           <button
-            onClick={() => { setMode(mode === "signup" ? "signin" : "signup"); setError(null); }}
+            onClick={() => { setMode(mode === "signup" ? "signin" : "signup"); setError(null); setPasswordErrors([]); }}
             className="text-primary font-semibold hover:underline"
           >
             {mode === "signup" ? "Sign in" : "Sign up"}
