@@ -8,14 +8,6 @@ import {
   Menu,
   X,
   Bell,
-  Fuel,
-  GalleryHorizontalEnd,
-  Package,
-  Pill,
-  ShoppingCart,
-  Wrench,
-  ChevronRight,
-  ChevronLeft,
   User,
   LogOut,
 } from "lucide-react"
@@ -32,29 +24,6 @@ const iconBtn =
 const rowBtn =
   "flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-medium text-foreground w-full text-left"
 
-const storeTypes = [
-  {
-    id: "all",
-    label: "All",
-    icon: GalleryHorizontalEnd,
-    color: "text-lime-500",
-  },
-  {
-    id: "grocery",
-    label: "Grocery",
-    icon: ShoppingCart,
-    color: "text-emerald-500",
-  },
-  { id: "hardware", label: "Hardware", icon: Wrench, color: "text-orange-500" },
-  {
-    id: "wholesale",
-    label: "Wholesale",
-    icon: Package,
-    color: "text-blue-500",
-  },
-  { id: "pharmacy", label: "Pharmacy", icon: Pill, color: "text-pink-500" },
-  { id: "fuel", label: "Fuel", icon: Fuel, color: "text-amber-500" },
-]
 
 export function Header({
   locateRef,
@@ -70,7 +39,6 @@ export function Header({
   const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => setMounted(true), [])
-  const [showCategories, setShowCategories] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [profilePopupOpen, setProfilePopupOpen] = useState(false)
   const { user, requireAuth, signOut } = useAuth()
@@ -111,10 +79,7 @@ export function Header({
 
         {/* Burger circle — right */}
         <button
-          onClick={() => {
-            setMenuOpen((v) => !v)
-            setShowCategories(false)
-          }}
+          onClick={() => setMenuOpen((v) => !v)}
           className="fixed top-4 right-4 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white shadow-lg transition-colors hover:bg-primary/90"
           aria-label="Menu"
         >
@@ -124,121 +89,60 @@ export function Header({
         {/* Mobile dropdown — anchored top-right below burger */}
         {menuOpen && (
           <>
-            <div
-              className="fixed inset-0 z-40"
-              onClick={() => {
-                setMenuOpen(false)
-                setShowCategories(false)
-              }}
-            />
+            <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
             <div className="fixed top-16 right-4 z-50 flex min-w-55 flex-col items-stretch gap-1 rounded-2xl border border-border bg-popover p-3 shadow-xl">
-              {!showCategories ? (
-                <>
-                  <button className={rowBtn}>
-                    <Bell className="h-4 w-4 shrink-0" />
-                    Notifications
-                  </button>
+              <button className={rowBtn}>
+                <Bell className="h-4 w-4 shrink-0" />
+                Notifications
+              </button>
 
-                  {/* Store Categories — opens sub-panel */}
-                  <button
-                    className={rowBtn}
-                    onClick={() => setShowCategories(true)}
-                  >
-                    <GalleryHorizontalEnd className="h-4 w-4 shrink-0" />
-                    <span className="flex-1">Store Categories</span>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  </button>
+              <button
+                onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+                className={rowBtn}
+              >
+                {mounted && resolvedTheme === "dark" ? (
+                  <Sun className="h-4 w-4 shrink-0" />
+                ) : (
+                  <Moon className="h-4 w-4 shrink-0" />
+                )}
+                {mounted && resolvedTheme === "dark" ? "Light mode" : "Dark mode"}
+              </button>
 
-                  {/* Theme toggle — stays open (mounted check avoids hydration mismatch) */}
-                  <button
-                    onClick={() =>
-                      setTheme(resolvedTheme === "dark" ? "light" : "dark")
-                    }
-                    className={rowBtn}
-                  >
-                    {mounted && resolvedTheme === "dark" ? (
-                      <Sun className="h-4 w-4 shrink-0" />
-                    ) : (
-                      <Moon className="h-4 w-4 shrink-0" />
-                    )}
-                    {mounted && resolvedTheme === "dark"
-                      ? "Light mode"
-                      : "Dark mode"}
-                  </button>
-
-                  <div className="mt-1 border-t border-border pt-2">
-                    {user ? (
-                      <div className="flex flex-col gap-1">
-                        <button
-                          type="button"
-                          className={rowBtn}
-                          onClick={() => {
-                            setMenuOpen(false)
-                            setProfilePopupOpen(true)
-                          }}
-                        >
-                          <User className="h-4 w-4 shrink-0 text-primary" />
-                          User profile
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            signOut()
-                            setMenuOpen(false)
-                          }}
-                          className={cn(rowBtn, "text-destructive hover:bg-destructive/10")}
-                        >
-                          <LogOut className="h-4 w-4 shrink-0 text-destructive" />
-                          Sign out
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => requireAuth(() => {})}
-                        className="w-full rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-                      >
-                        SIGN UP
-                      </button>
-                    )}
+              <div className="mt-1 border-t border-border pt-2">
+                {user ? (
+                  <div className="flex flex-col gap-1">
+                    <button
+                      type="button"
+                      className={rowBtn}
+                      onClick={() => {
+                        setMenuOpen(false)
+                        setProfilePopupOpen(true)
+                      }}
+                    >
+                      <User className="h-4 w-4 shrink-0 text-primary" />
+                      User profile
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        signOut()
+                        setMenuOpen(false)
+                      }}
+                      className={cn(rowBtn, "text-destructive hover:bg-destructive/10")}
+                    >
+                      <LogOut className="h-4 w-4 shrink-0 text-destructive" />
+                      Sign out
+                    </button>
                   </div>
-                </>
-              ) : (
-                <>
-                  {/* Back header */}
+                ) : (
                   <button
-                    className={rowBtn}
-                    onClick={() => setShowCategories(false)}
+                    onClick={() => requireAuth(() => {})}
+                    className="w-full rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
                   >
-                    <ChevronLeft className="h-4 w-4 shrink-0" />
-                    <span className="flex-1 font-semibold">
-                      Store Categories
-                    </span>
+                    SIGN UP
                   </button>
-
-                  <div className="my-1 border-t border-border" />
-
-                  {storeTypes.map((type) => {
-                    const Icon = type.icon
-                    const isSelected = activeCategory === type.id
-                    return (
-                      <button
-                        key={type.id}
-                        className={`${rowBtn} ${isSelected ? "bg-muted" : ""}`}
-                        onClick={() => {
-                          onCategoryChange?.(type.id)
-                          setShowCategories(false)
-                        }}
-                      >
-                        <Icon className={`h-4 w-4 shrink-0 ${type.color}`} />
-                        <span className="flex-1">{type.label}</span>
-                        {isSelected && (
-                          <span className="h-2 w-2 rounded-full bg-primary" />
-                        )}
-                      </button>
-                    )
-                  })}
-                </>
-              )}
+                )}
+              </div>
             </div>
           </>
         )}
