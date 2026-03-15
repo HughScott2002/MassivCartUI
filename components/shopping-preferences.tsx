@@ -142,7 +142,7 @@ export function ShoppingPreferences({ onClose, savingsMode, onSavingsModeChange,
           }`}
         >
           <Navigation className="h-4 w-4" />
-          Route
+          Savings
         </button>
         {onClose && (
           <button

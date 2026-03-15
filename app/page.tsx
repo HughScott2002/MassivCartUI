@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { Header } from "@/components/header"
 import { ShoppingPreferences } from "@/components/shopping-preferences"
 import { ShopDetailsSheet } from "@/components/shop-details-sheet"
@@ -17,6 +17,7 @@ export default function Page() {
   const [isMobile, setIsMobile] = useState(false)
   const flyToRef = useRef<((lng: number, lat: number) => void) | null>(null)
   const locateRef = useRef<(() => void) | null>(null)
+  const fitRouteRef = useRef<(() => void) | null>(null)
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null)
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [, setAtLocation] = useState(false)
@@ -55,6 +56,18 @@ export default function Page() {
   }
 
   const listTotal = listItems.reduce((sum, item) => sum + item.price, 0)
+
+  const routeStops = useMemo(() => {
+    const seen = new Set<number>()
+    const stops: Array<{ lat: number; lng: number; store_name: string; stop_num: number }> = []
+    for (const item of listItems) {
+      if (item.lat == null || item.lng == null) continue
+      if (seen.has(item.store_id)) continue
+      seen.add(item.store_id)
+      stops.push({ lat: item.lat, lng: item.lng, store_name: item.store_name, stop_num: stops.length + 1 })
+    }
+    return stops
+  }, [listItems])
 
   // Lifted state for CommandBar / ShoppingPreferences sync
   const [rightTab, setRightTab] = useState<"store" | "list">("store")
@@ -135,6 +148,8 @@ export default function Page() {
           locateRef={locateRef}
           onAtLocationChange={setAtLocation}
           onLocationChange={setUserLocation}
+          routeStops={routeStops}
+          fitRouteRef={fitRouteRef}
         />
       </div>
 
@@ -164,6 +179,7 @@ export default function Page() {
               onFlyTo={(lng, lat) => flyToRef.current?.(lng, lat)}
               activeTab={rightTab}
               onTabChange={setRightTab}
+              onShowRoute={() => fitRouteRef.current?.()}
             />
           </div>
         )}
