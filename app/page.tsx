@@ -14,13 +14,18 @@ export default function Page() {
   const [leftOpen, setLeftOpen] = useState(true)
   const [rightOpen, setRightOpen] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
-  const flyToRef  = useRef<((lng: number, lat: number) => void) | null>(null)
+  const flyToRef = useRef<((lng: number, lat: number) => void) | null>(null)
   const locateRef = useRef<(() => void) | null>(null)
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null)
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
-  const [, setAtLocation]   = useState(false)
+  const [, setAtLocation] = useState(false)
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [showPointsToast, setShowPointsToast] = useState(false)
+
+  // Lifted state for CommandBar / ShoppingPreferences sync
+  const [rightTab, setRightTab] = useState<"store" | "list">("store")
+  const [budget, setBudget] = useState("")
+  const [savingsMode, setSavingsMode] = useState(2)
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 639px)")
@@ -74,7 +79,11 @@ export default function Page() {
       <div className="pointer-events-none fixed inset-x-4 top-18 bottom-28 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between max-sm:inset-auto max-sm:top-auto max-sm:left-auto max-sm:right-auto max-sm:bottom-auto max-sm:contents">
         {leftOpen && (
           <div className="pointer-events-auto w-full shrink-0 sm:w-72 max-sm:fixed max-sm:right-4 max-sm:top-20 max-sm:w-[min(calc(100%-2rem),340px)] max-sm:max-h-[65vh] max-sm:overflow-auto max-sm:z-[60] max-sm:shadow-2xl max-sm:rounded-2xl">
-            <ShoppingPreferences onClose={() => setLeftOpen(false)} />
+            <ShoppingPreferences
+              onClose={() => setLeftOpen(false)}
+              savingsMode={savingsMode}
+              onSavingsModeChange={setSavingsMode}
+            />
           </div>
         )}
         {rightOpen && (
@@ -83,6 +92,7 @@ export default function Page() {
               onClose={() => setRightOpen(false)}
               results={searchResults}
               onFlyTo={(lng, lat) => flyToRef.current?.(lng, lat)}
+              activeTab={rightTab}
             />
           </div>
         )}
@@ -155,9 +165,16 @@ export default function Page() {
 
       {/* Command bar */}
       <CommandBar
-        onResults={(results) => setSearchResults(results)}
-        savingsMode={2}
+        rightTab={rightTab}
+        budget={budget}
+        onBudgetChange={setBudget}
+        savingsMode={savingsMode}
+        onSavingsModeChange={setSavingsMode}
         userLocation={userLocation}
+        onSearchResults={(results) => setSearchResults(results)}
+        onAddToCart={() => {}}
+        onAddStore={() => {}}
+        onTabChange={setRightTab}
         onPointsAwarded={() => setShowPointsToast(true)}
       />
     </main>

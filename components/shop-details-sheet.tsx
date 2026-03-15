@@ -8,10 +8,13 @@ interface ShopDetailsSheetProps {
   onClose?: () => void;
   results?: SearchResult[];
   onFlyTo?: (lng: number, lat: number) => void;
+  activeTab?: "store" | "list";
 }
 
-export function ShopDetailsSheet({ onClose, results = [], onFlyTo }: ShopDetailsSheetProps) {
-  const [activeTab, setActiveTab] = useState<"store" | "list">("store");
+export function ShopDetailsSheet({ onClose, results = [], onFlyTo, activeTab: activeTabProp }: ShopDetailsSheetProps) {
+  const [activeTabLocal, setActiveTabLocal] = useState<"store" | "list">("store");
+  const activeTab = activeTabProp ?? activeTabLocal;
+  const setActiveTab = activeTabProp === undefined ? setActiveTabLocal : () => {};
 
   return (
     <div className="rounded-2xl border border-black/10 dark:border-white/10 bg-card backdrop-blur-md text-foreground shadow-xl overflow-hidden flex flex-col">

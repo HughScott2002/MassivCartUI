@@ -1,7 +1,9 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { LayoutDashboard, Navigation, X, Eye, EyeOff, Upload, Trophy } from "lucide-react"
+import { useAuth } from "@/lib/auth-context"
 
 const BUDGET_STORAGE_KEY = "massivcart_weekly_budget"
 
@@ -57,19 +59,29 @@ const savingsOptions = [
   { label: "Extreme", maxStores: 5, radiusKm: 40 },
 ]
 
-// Dummy data — wire to API in Phase 4
-const DUMMY_POINTS   = 1250
-const DUMMY_CART_TOTAL = 3750
-const DUMMY_STREAK   = 3
-const DUMMY_SAVED    = 8420
-const DUMMY_UPLOADS  = 2
-const DUMMY_GOAL     = 5
+interface ShoppingPreferencesProps {
+  onClose?: () => void
+  savingsMode: number
+  onSavingsModeChange: (v: number) => void
+}
 
-export function ShoppingPreferences({ onClose }: { onClose?: () => void }) {
+export function ShoppingPreferences({ onClose, savingsMode, onSavingsModeChange }: ShoppingPreferencesProps) {
   const [activeTab, setActiveTab] = useState<"dashboard" | "route">("dashboard")
   const [budget, setBudgetState] = useState(0)
   const [budgetVisible, setBudgetVisible] = useState(true)
-  const [savingsMode, setSavingsMode] = useState(2)
+  const { user } = useAuth()
+
+  const { data } = useQuery({
+    queryKey: ["dashboard", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null
+      const res = await fetch(`/api/dashboard?userId=${user.id}`)
+      if (!res.ok) return null
+      return res.json()
+    },
+    enabled: !!user?.id,
+    staleTime: 30_000, // matches Redis TTL of 30s for user data
+  })
 
   useEffect(() => {
     setBudgetState(getStoredBudget())
@@ -87,8 +99,14 @@ export function ShoppingPreferences({ onClose }: { onClose?: () => void }) {
     []
   )
 
-  const cartTotal = DUMMY_CART_TOTAL
-  const points = DUMMY_POINTS
+  const points = data?.points ?? 0
+  const streak = data?.streak_days ?? 0
+  const weeklyUploads = data?.weekly_uploads ?? 0
+  const weeklyGoal = data?.weekly_upload_goal ?? 5
+  // TODO: no API equivalent yet for cart total and amount saved
+  const cartTotal = 0
+  const saved = 0
+
   const selected = savingsOptions[savingsMode]
   const budgetPercent =
     budget > 0 ? Math.min((cartTotal / budget) * 100, 100) : 0
@@ -220,14 +238,14 @@ export function ShoppingPreferences({ onClose }: { onClose?: () => void }) {
               </div>
               <div className="flex-1 rounded-xl bg-orange-500/10 px-3 py-2 text-center">
                 <p className="text-xs font-medium text-muted-foreground">Streak</p>
-                <p className="text-lg font-bold text-orange-500">🔥 {DUMMY_STREAK}d</p>
+                <p className="text-lg font-bold text-orange-500">🔥 {streak}d</p>
               </div>
             </div>
 
             {/* Life Saved */}
             <div className="rounded-xl bg-primary/[0.08] px-3 py-2.5">
               <p className="text-xs font-medium text-muted-foreground">Life Saved</p>
-              <p className="text-base font-bold text-primary">J${DUMMY_SAVED.toLocaleString()}</p>
+              <p className="text-base font-bold text-primary">J${saved.toLocaleString()}</p>
             </div>
 
             {/* Weekly Uploads — segment bars */}
@@ -236,13 +254,13 @@ export function ShoppingPreferences({ onClose }: { onClose?: () => void }) {
                 <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
                   <Upload className="h-3 w-3" /> Weekly Uploads
                 </span>
-                <span className="text-xs text-muted-foreground">{DUMMY_UPLOADS}/{DUMMY_GOAL}</span>
+                <span className="text-xs text-muted-foreground">{weeklyUploads}/{weeklyGoal}</span>
               </div>
               <div className="flex gap-1">
-                {Array.from({ length: DUMMY_GOAL }).map((_, i) => (
+                {Array.from({ length: weeklyGoal }).map((_, i) => (
                   <div
                     key={i}
-                    className={`h-2 flex-1 rounded-full transition-all duration-300 ${i < DUMMY_UPLOADS ? "bg-primary" : "bg-muted"}`}
+                    className={`h-2 flex-1 rounded-full transition-all duration-300 ${i < weeklyUploads ? "bg-primary" : "bg-muted"}`}
                   />
                 ))}
               </div>
@@ -286,7 +304,7 @@ export function ShoppingPreferences({ onClose }: { onClose?: () => void }) {
                 min={0}
                 max={3}
                 value={savingsMode}
-                onChange={(e) => setSavingsMode(Number(e.target.value))}
+                onChange={(e) => onSavingsModeChange(Number(e.target.value))}
                 className="w-full h-2 bg-muted rounded-full appearance-none cursor-pointer
                   [&::-webkit-slider-thumb]:appearance-none
                   [&::-webkit-slider-thumb]:w-6
