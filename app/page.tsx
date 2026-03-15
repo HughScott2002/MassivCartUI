@@ -6,12 +6,15 @@ import { ShoppingPreferences } from "@/components/shopping-preferences"
 import { ShopDetailsSheet } from "@/components/shop-details-sheet"
 import { CommandBar } from "@/components/command-bar"
 import { MapBackground } from "@/components/map-background"
+import { TutorialOverlay } from "@/components/tutorial-overlay"
+import { useAuth } from "@/lib/auth-context"
 import type { POI } from "@/lib/poi-provider"
 import { LayoutDashboard, ShoppingBasket, Store } from "lucide-react"
 import type { SearchResult, ListItem } from "@/lib/types"
 import { DEMO_RESULTS } from "@/lib/demo-results"
 
 export default function Page() {
+  const { showTutorial, dismissTutorial } = useAuth()
   const [leftOpen, setLeftOpen] = useState(true)
   const [rightOpen, setRightOpen] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
@@ -137,6 +140,7 @@ export default function Page() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-background">
+      {showTutorial && <TutorialOverlay onDone={dismissTutorial} />}
 
       {/* Map — Phase 2: Mapbox GL */}
       <div className="absolute inset-0">

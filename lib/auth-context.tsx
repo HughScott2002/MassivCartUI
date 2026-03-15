@@ -16,6 +16,8 @@ interface AuthContextValue {
   signOut: () => Promise<void>;
   showAuthModal: boolean;
   requireAuth: (pendingFn: () => void) => void;
+  showTutorial: boolean;
+  dismissTutorial: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -25,6 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [authReady, setAuthReady] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
   const pendingAction = useRef<(() => void) | null>(null);
 
   const fetchIsAdmin = useCallback((userId: string) => {
@@ -118,10 +121,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setShowAuthModal(false);
   };
 
+  const dismissTutorial = useCallback(() => setShowTutorial(false), []);
+
   return (
-    <AuthContext.Provider value={{ session, user: session?.user ?? null, isAdmin, authReady, signIn, signUp, signInWithGoogle, signOut, showAuthModal, requireAuth }}>
+    <AuthContext.Provider value={{ session, user: session?.user ?? null, isAdmin, authReady, signIn, signUp, signInWithGoogle, signOut, showAuthModal, requireAuth, showTutorial, dismissTutorial }}>
       {children}
-      {showAuthModal && <AuthModal onClose={handleModalDismiss} />}
+      {showAuthModal && <AuthModal onClose={handleModalDismiss} onSignedUp={() => setShowTutorial(true)} />}
     </AuthContext.Provider>
   );
 }
