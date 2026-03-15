@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { LayoutDashboard, Navigation, X, Eye, EyeOff } from "lucide-react"
+import { LayoutDashboard, Navigation, X, Eye, EyeOff, Upload, Trophy } from "lucide-react"
 
 const BUDGET_STORAGE_KEY = "massivcart_weekly_budget"
 
@@ -58,9 +58,13 @@ const savingsOptions = [
   { label: "Extreme", maxStores: 5, radiusKm: 40 },
 ]
 
-// Dummy data — wire to API in Phase 6
-const DUMMY_POINTS = 1250
+// Dummy data — wire to API in Phase 4
+const DUMMY_POINTS   = 1250
 const DUMMY_CART_TOTAL = 3750
+const DUMMY_STREAK   = 3
+const DUMMY_SAVED    = 8420
+const DUMMY_UPLOADS  = 2
+const DUMMY_GOAL     = 5
 
 export function ShoppingPreferences({ onClose }: { onClose?: () => void }) {
   const [activeTab, setActiveTab] = useState<"dashboard" | "route">("dashboard")
@@ -94,7 +98,6 @@ export function ShoppingPreferences({ onClose }: { onClose?: () => void }) {
     current: tier,
     next: nextTier,
     progress: tierProgress,
-    remaining,
   } = getTierInfo(points)
 
   return (
@@ -134,190 +137,218 @@ export function ShoppingPreferences({ onClose }: { onClose?: () => void }) {
         )}
       </div>
 
-      {/* Weekly Budget — always visible, solid green */}
-      <div className="flex flex-col gap-3 bg-primary px-4 py-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xs font-extrabold tracking-widest text-white uppercase">
-            Weekly Budget
-          </h3>
-          <button
-            type="button"
-            onClick={() => setBudgetVisible((v) => !v)}
-            className="rounded-lg p-1.5 text-white/80 transition-colors hover:bg-white/20 hover:text-white"
-            aria-label={budgetVisible ? "Hide budget" : "Show budget"}
-          >
-            {budgetVisible ? (
-              <Eye className="h-4 w-4" />
-            ) : (
-              <EyeOff className="h-4 w-4" />
-            )}
-          </button>
-        </div>
-
-        {/* Big budget number */}
-        <div className="flex items-baseline gap-1">
-          <span className="text-3xl font-black text-white/70">J$</span>
-          {budgetVisible ? (
-            <input
-              type="number"
-              min={0}
-              value={budget || ""}
-              onChange={(e) => setBudget(Number(e.target.value) || 0)}
-              placeholder="0"
-              className="w-full min-w-0 [appearance:textfield] border-0 bg-transparent text-6xl leading-none font-black text-white outline-none placeholder:text-white/40 focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-            />
-          ) : (
-            <span className="text-6xl leading-none font-black text-white/40">
-              ••••
-            </span>
-          )}
-        </div>
-      </div>
-      {/* Current basket */}
-      <div className="mx-6 my-6 space-y-1.5">
-        <div className="flex items-center justify-between">
-          <span className="text-[0.7rem] font-semibold tracking-wider uppercase">
-            Current Basket
-          </span>
-          {budgetVisible && (
-            <span className="text-xs font-bold text-white tabular-nums">
-              J${cartTotal.toLocaleString()}
-            </span>
-          )}
-        </div>
-        <div className="h-2 w-full overflow-hidden rounded-full bg-white/20">
-          <div
-            className={`h-full rounded-full transition-all duration-500 ${isOver ? "bg-red-300" : "bg-primary"}`}
-            style={{ width: `${budgetPercent}%` }}
-          />
-        </div>
-        {budgetVisible && (
-          <p className="text-[0.7rem] font-semibold tracking-wider uppercase
-          ">
-            {budgetPercent.toFixed(0)}% used
-            {budget > 0 && (
-              <span className="ml-1">
-                · J${Math.abs(budget - cartTotal).toLocaleString()}{" "}
-                {isOver ? "over" : "remaining"}
-              </span>
-            )}
-          </p>
-        )}
-      </div>
-
       {/* Tab content */}
-      <div className="space-y-4 p-4">
-        {activeTab === "dashboard" ? (
-          <>
-            {/* Scout Points */}
-            <div className="space-y-2">
-              <p className="text-xs tracking-widest text-muted-foreground uppercase">
-                Scout Points
-              </p>
-              <p className="leading-none tabular-nums">
-                <span className="text-6xl font-black text-primary">
-                  {points.toLocaleString()}
+      {activeTab === "dashboard" ? (
+        <>
+          {/* Weekly Budget — Dashboard only, solid green */}
+          <div className="flex flex-col gap-3 bg-primary px-4 py-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-extrabold tracking-widest text-white uppercase">
+                Weekly Budget
+              </h3>
+              <button
+                type="button"
+                onClick={() => setBudgetVisible((v) => !v)}
+                className="rounded-lg p-1.5 text-white/80 transition-colors hover:bg-white/20 hover:text-white"
+                aria-label={budgetVisible ? "Hide budget" : "Show budget"}
+              >
+                {budgetVisible ? (
+                  <Eye className="h-4 w-4" />
+                ) : (
+                  <EyeOff className="h-4 w-4" />
+                )}
+              </button>
+            </div>
+
+            {/* Big budget number */}
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-black text-white/70">J$</span>
+              {budgetVisible ? (
+                <input
+                  type="number"
+                  min={0}
+                  value={budget || ""}
+                  onChange={(e) => setBudget(Number(e.target.value) || 0)}
+                  placeholder="0"
+                  className="w-full min-w-0 [appearance:textfield] border-0 bg-transparent text-6xl leading-none font-black text-white outline-none placeholder:text-white/40 focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                />
+              ) : (
+                <span className="text-6xl leading-none font-black text-white/40">
+                  ••••
                 </span>
-                <span className="text-3xl font-black text-primary"> pts</span>
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {tier.label} tier
-                {nextTier && (
-                  <span>
-                    {" "}
-                    · {remaining.toLocaleString()} pts to {nextTier.label}
+              )}
+            </div>
+
+            {/* Current basket — inline within budget block */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[0.7rem] font-semibold tracking-wider text-white/70 uppercase">
+                  Current Basket
+                </span>
+                {budgetVisible && (
+                  <span className="text-xs font-bold text-white tabular-nums">
+                    J${cartTotal.toLocaleString()}
                   </span>
                 )}
-              </p>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-border">
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-white/20">
                 <div
-                  className="h-full rounded-full bg-primary transition-all duration-500"
-                  style={{ width: `${tierProgress}%` }}
+                  className={`h-full rounded-full transition-all duration-500 ${isOver ? "bg-red-300" : "bg-white/80"}`}
+                  style={{ width: `${budgetPercent}%` }}
                 />
               </div>
-            </div>
-          </>
-        ) : (
-          <>
-            {/* Savings mode */}
-            <div className="space-y-5">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-foreground">Savings Mode</span>
-                  <span className={`text-sm font-semibold ${savingsMode === 3 ? "text-orange-500" : "text-primary"}`}>
-                    {selected.label}
-                  </span>
-                </div>
-                <div className="relative">
-                  <input
-                    type="range"
-                    min={0}
-                    max={3}
-                    value={savingsMode}
-                    onChange={(e) => setSavingsMode(Number(e.target.value))}
-                    className="w-full h-2 bg-muted rounded-full appearance-none cursor-pointer
-                      [&::-webkit-slider-thumb]:appearance-none
-                      [&::-webkit-slider-thumb]:w-6
-                      [&::-webkit-slider-thumb]:h-6
-                      [&::-webkit-slider-thumb]:bg-background
-                      [&::-webkit-slider-thumb]:rounded-full
-                      [&::-webkit-slider-thumb]:shadow-lg
-                      [&::-webkit-slider-thumb]:border-2
-                      [&::-webkit-slider-thumb]:border-primary
-                      [&::-webkit-slider-thumb]:cursor-pointer
-                      [&::-moz-range-thumb]:w-6
-                      [&::-moz-range-thumb]:h-6
-                      [&::-moz-range-thumb]:bg-background
-                      [&::-moz-range-thumb]:rounded-full
-                      [&::-moz-range-thumb]:shadow-lg
-                      [&::-moz-range-thumb]:border-2
-                      [&::-moz-range-thumb]:border-primary
-                      [&::-moz-range-thumb]:cursor-pointer"
-                  />
-                  <div className="flex justify-between mt-1 px-1">
-                    {savingsOptions.map((_, i) => (
-                      <div
-                        key={i}
-                        className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                          i <= savingsMode
-                            ? savingsMode === 3 ? "bg-orange-500" : "bg-primary"
-                            : "bg-muted-foreground/30"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <div className="flex justify-between text-xs text-muted-foreground px-0.5 mt-1">
-                    <span>Quick</span>
-                    <span>Extreme</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-muted-foreground">Max Stores</span>
-                  <span className="text-xs text-muted-foreground/60 italic">auto</span>
-                </div>
-                <div className="flex items-center gap-1.5 px-1">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className={`h-6 flex-1 rounded-md transition-all duration-300 ${
-                        i < selected.maxStores
-                          ? savingsMode === 3 ? "bg-orange-400/60" : "bg-primary/50"
-                          : "bg-muted border border-border"
-                      }`}
-                    />
-                  ))}
-                </div>
-                <p className="text-xs text-muted-foreground/60 px-0.5">
-                  {selected.maxStores} store{selected.maxStores > 1 ? "s" : ""} · {selected.maxStores === 1 ? "within" : "up to"} {selected.radiusKm} km{selected.maxStores > 1 ? " away" : ""}
+              {budgetVisible && (
+                <p className="text-[0.7rem] font-semibold tracking-wider text-white/70 uppercase">
+                  {budgetPercent.toFixed(0)}% used
+                  {budget > 0 && (
+                    <span className="ml-1">
+                      · J${Math.abs(budget - cartTotal).toLocaleString()}{" "}
+                      {isOver ? "over" : "remaining"}
+                    </span>
+                  )}
                 </p>
+              )}
+            </div>
+          </div>
+
+          {/* Stats grid */}
+          <div className="space-y-3 p-4">
+            {/* Points + Streak */}
+            <div className="flex gap-2">
+              <div className="flex-1 rounded-xl bg-primary/10 px-3 py-2 text-center">
+                <p className="text-xs font-medium text-muted-foreground">Scout Points</p>
+                <p className="text-lg font-bold text-primary">{points.toLocaleString()}</p>
+              </div>
+              <div className="flex-1 rounded-xl bg-orange-500/10 px-3 py-2 text-center">
+                <p className="text-xs font-medium text-muted-foreground">Streak</p>
+                <p className="text-lg font-bold text-orange-500">🔥 {DUMMY_STREAK}d</p>
               </div>
             </div>
-          </>
-        )}
-      </div>
+
+            {/* Life Saved */}
+            <div className="rounded-xl bg-primary/[0.08] px-3 py-2.5">
+              <p className="text-xs font-medium text-muted-foreground">Life Saved</p>
+              <p className="text-base font-bold text-primary">J${DUMMY_SAVED.toLocaleString()}</p>
+            </div>
+
+            {/* Weekly Uploads — segment bars */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                  <Upload className="h-3 w-3" /> Weekly Uploads
+                </span>
+                <span className="text-xs text-muted-foreground">{DUMMY_UPLOADS}/{DUMMY_GOAL}</span>
+              </div>
+              <div className="flex gap-1">
+                {Array.from({ length: DUMMY_GOAL }).map((_, i) => (
+                  <div
+                    key={i}
+                    className={`h-2 flex-1 rounded-full transition-all duration-300 ${i < DUMMY_UPLOADS ? "bg-primary" : "bg-muted"}`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Tier */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                  <Trophy className="h-3 w-3" /> Tier
+                </span>
+                <span className="text-xs font-semibold text-primary">{tier.label}</span>
+              </div>
+              {nextTier && (
+                <>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all duration-500"
+                      style={{ width: `${tierProgress}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">{tierProgress.toFixed(0)}% to {nextTier.label}</p>
+                </>
+              )}
+            </div>
+          </div>
+        </>
+      ) : (
+        /* Route tab — savings mode slider only */
+        <div className="space-y-5 p-4">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-foreground">Savings Mode</span>
+              <span className={`text-sm font-semibold ${savingsMode === 3 ? "text-orange-500" : "text-primary"}`}>
+                {selected.label}
+              </span>
+            </div>
+            <div className="relative">
+              <input
+                type="range"
+                min={0}
+                max={3}
+                value={savingsMode}
+                onChange={(e) => setSavingsMode(Number(e.target.value))}
+                className="w-full h-2 bg-muted rounded-full appearance-none cursor-pointer
+                  [&::-webkit-slider-thumb]:appearance-none
+                  [&::-webkit-slider-thumb]:w-6
+                  [&::-webkit-slider-thumb]:h-6
+                  [&::-webkit-slider-thumb]:bg-background
+                  [&::-webkit-slider-thumb]:rounded-full
+                  [&::-webkit-slider-thumb]:shadow-lg
+                  [&::-webkit-slider-thumb]:border-2
+                  [&::-webkit-slider-thumb]:border-primary
+                  [&::-webkit-slider-thumb]:cursor-pointer
+                  [&::-moz-range-thumb]:w-6
+                  [&::-moz-range-thumb]:h-6
+                  [&::-moz-range-thumb]:bg-background
+                  [&::-moz-range-thumb]:rounded-full
+                  [&::-moz-range-thumb]:shadow-lg
+                  [&::-moz-range-thumb]:border-2
+                  [&::-moz-range-thumb]:border-primary
+                  [&::-moz-range-thumb]:cursor-pointer"
+              />
+              <div className="flex justify-between mt-1 px-1">
+                {savingsOptions.map((_, i) => (
+                  <div
+                    key={i}
+                    className={`w-1.5 h-1.5 rounded-full transition-colors ${
+                      i <= savingsMode
+                        ? savingsMode === 3 ? "bg-orange-500" : "bg-primary"
+                        : "bg-muted-foreground/30"
+                    }`}
+                  />
+                ))}
+              </div>
+              <div className="flex justify-between text-xs text-muted-foreground px-0.5 mt-1">
+                <span>Quick</span>
+                <span>Extreme</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-muted-foreground">Max Stores</span>
+              <span className="text-xs text-muted-foreground/60 italic">auto</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-1">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div
+                  key={i}
+                  className={`h-6 flex-1 rounded-md transition-all duration-300 ${
+                    i < selected.maxStores
+                      ? savingsMode === 3 ? "bg-orange-400/60" : "bg-primary/50"
+                      : "bg-muted border border-border"
+                  }`}
+                />
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground/60 px-0.5">
+              {selected.maxStores} store{selected.maxStores > 1 ? "s" : ""} · {selected.maxStores === 1 ? "within" : "up to"} {selected.radiusKm} km{selected.maxStores > 1 ? " away" : ""}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
