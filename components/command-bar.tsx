@@ -536,7 +536,7 @@ export function CommandBar({
         />
 
         {/* Main bar */}
-        <div className="flex h-14 items-center gap-3 rounded-2xl border border-border bg-card px-4 shadow-xl backdrop-blur-md">
+        <div className="flex h-14 items-center gap-2 rounded-2xl border border-border bg-card px-3 shadow-xl backdrop-blur-md sm:gap-3 sm:px-4">
           {/* Sparkles + MASSIV label */}
           <div className="flex shrink-0 flex-col items-center justify-center">
             <Sparkles className="h-5 w-5 text-primary" />
@@ -572,10 +572,10 @@ export function CommandBar({
               type="button"
               onClick={handleScanClick}
               disabled={isUploading}
-              className="group relative flex shrink-0 items-center gap-2 overflow-hidden rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-white transition-all duration-300 ease-out hover:scale-[1.02] hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/30 active:scale-[0.98] disabled:opacity-60"
+              className="group relative flex shrink-0 items-center gap-1.5 overflow-hidden rounded-lg bg-primary px-2.5 py-2 text-xs font-medium text-white transition-all duration-300 ease-out hover:scale-[1.02] hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/30 active:scale-[0.98] disabled:opacity-60 sm:gap-2 sm:rounded-xl sm:px-4 sm:py-2.5 sm:text-sm"
             >
               <span className="relative">Scan Receipt</span>
-              <ScanLine className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+              <ScanLine className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" strokeWidth={2.5} />
             </button>
           ) : isUploading ? null : (
             <button
