@@ -572,10 +572,17 @@ export function CommandBar({
               type="button"
               onClick={handleScanClick}
               disabled={isUploading}
+<<<<<<< HEAD
               className="group relative flex shrink-0 items-center gap-1.5 overflow-hidden rounded-lg bg-primary px-2.5 py-2 text-xs font-medium text-white transition-all duration-300 ease-out hover:scale-[1.02] hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/30 active:scale-[0.98] disabled:opacity-60 sm:gap-2 sm:rounded-xl sm:px-4 sm:py-2.5 sm:text-sm"
             >
               <span className="relative">Scan Receipt</span>
               <ScanLine className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" strokeWidth={2.5} />
+=======
+              className="group relative flex shrink-0 items-center gap-1.5 overflow-hidden rounded-xl bg-primary px-2.5 py-2.5 text-sm font-medium text-white transition-all duration-300 ease-out hover:scale-[1.02] hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/30 active:scale-[0.98] disabled:opacity-60 sm:gap-2 sm:px-4"
+            >
+              <span className="relative hidden sm:inline">Scan Receipt</span>
+              <ScanLine className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+>>>>>>> 27c2ba879b2039161cd18f7973370d4298279edb
             </button>
           ) : isUploading ? null : (
             <button
