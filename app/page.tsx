@@ -94,6 +94,7 @@ export default function Page() {
               results={searchResults}
               onFlyTo={(lng, lat) => flyToRef.current?.(lng, lat)}
               activeTab={rightTab}
+              onTabChange={setRightTab}
             />
           </div>
         )}
