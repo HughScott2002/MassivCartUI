@@ -240,34 +240,80 @@ export function ShoppingPreferences({ onClose }: { onClose?: () => void }) {
         ) : (
           <>
             {/* Savings mode */}
-            <div className="space-y-3">
-              <p className="text-xs tracking-widest text-muted-foreground uppercase">
-                Savings Mode
-              </p>
-              <div className="space-y-2">
-                {savingsOptions.map((opt, i) => (
-                  <button
-                    key={opt.label}
-                    onClick={() => setSavingsMode(i)}
-                    className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-sm transition-colors ${
-                      savingsMode === i
-                        ? "border-primary/50 bg-primary/10 text-primary"
-                        : "border-border bg-muted/40 text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    <span className="font-medium">{opt.label}</span>
-                    <span className="text-xs tabular-nums">
-                      {opt.maxStores} store{opt.maxStores > 1 ? "s" : ""} ·{" "}
-                      {opt.radiusKm}km
-                    </span>
-                  </button>
-                ))}
+            <div className="space-y-5">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-foreground">Savings Mode</span>
+                  <span className={`text-sm font-semibold ${savingsMode === 3 ? "text-orange-500" : "text-primary"}`}>
+                    {selected.label}
+                  </span>
+                </div>
+                <div className="relative">
+                  <input
+                    type="range"
+                    min={0}
+                    max={3}
+                    value={savingsMode}
+                    onChange={(e) => setSavingsMode(Number(e.target.value))}
+                    className="w-full h-2 bg-muted rounded-full appearance-none cursor-pointer
+                      [&::-webkit-slider-thumb]:appearance-none
+                      [&::-webkit-slider-thumb]:w-6
+                      [&::-webkit-slider-thumb]:h-6
+                      [&::-webkit-slider-thumb]:bg-background
+                      [&::-webkit-slider-thumb]:rounded-full
+                      [&::-webkit-slider-thumb]:shadow-lg
+                      [&::-webkit-slider-thumb]:border-2
+                      [&::-webkit-slider-thumb]:border-primary
+                      [&::-webkit-slider-thumb]:cursor-pointer
+                      [&::-moz-range-thumb]:w-6
+                      [&::-moz-range-thumb]:h-6
+                      [&::-moz-range-thumb]:bg-background
+                      [&::-moz-range-thumb]:rounded-full
+                      [&::-moz-range-thumb]:shadow-lg
+                      [&::-moz-range-thumb]:border-2
+                      [&::-moz-range-thumb]:border-primary
+                      [&::-moz-range-thumb]:cursor-pointer"
+                  />
+                  <div className="flex justify-between mt-1 px-1">
+                    {savingsOptions.map((_, i) => (
+                      <div
+                        key={i}
+                        className={`w-1.5 h-1.5 rounded-full transition-colors ${
+                          i <= savingsMode
+                            ? savingsMode === 3 ? "bg-orange-500" : "bg-primary"
+                            : "bg-muted-foreground/30"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex justify-between text-xs text-muted-foreground px-0.5 mt-1">
+                    <span>Quick</span>
+                    <span>Extreme</span>
+                  </div>
+                </div>
               </div>
-              <p className="text-center text-xs text-muted-foreground">
-                Up to {selected.maxStores} store
-                {selected.maxStores > 1 ? "s" : ""} · {selected.radiusKm}km
-                radius
-              </p>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-muted-foreground">Max Stores</span>
+                  <span className="text-xs text-muted-foreground/60 italic">auto</span>
+                </div>
+                <div className="flex items-center gap-1.5 px-1">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className={`h-6 flex-1 rounded-md transition-all duration-300 ${
+                        i < selected.maxStores
+                          ? savingsMode === 3 ? "bg-orange-400/60" : "bg-primary/50"
+                          : "bg-muted border border-border"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground/60 px-0.5">
+                  {selected.maxStores} store{selected.maxStores > 1 ? "s" : ""} · {selected.maxStores === 1 ? "within" : "up to"} {selected.radiusKm} km{selected.maxStores > 1 ? " away" : ""}
+                </p>
+              </div>
             </div>
           </>
         )}
