@@ -4,11 +4,13 @@ import { useTheme } from "next-themes";
 import {
   Sun, Moon, LocateFixed, Menu, X, Bell,
   Fuel, GalleryHorizontalEnd, Package, Pill, ShoppingCart, Wrench, ChevronRight, ChevronLeft,
+  User, LogOut,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { GridMenu } from "./grid-menu";
 import { NotificationBell } from "./notification-bell";
 import { useAuth } from "@/lib/auth-context";
+import { ProfilePopup } from "./profile-popup";
 
 const iconBtn =
   "p-2.5 rounded-full bg-white/90 dark:bg-white/10 backdrop-blur-sm hover:bg-white dark:hover:bg-white/20 transition-colors border border-gray-200 dark:border-border shadow-sm";
@@ -27,9 +29,14 @@ const storeTypes = [
 
 export function Header() {
   const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => setMounted(true), []);
   const [showCategories, setShowCategories] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [profilePopupOpen, setProfilePopupOpen] = useState(false);
   const { user, requireAuth, signOut } = useAuth();
 
   return (
@@ -86,28 +93,37 @@ export function Header() {
                     <ChevronRight className="w-4 h-4 text-muted-foreground" />
                   </button>
 
-                  {/* Theme toggle — stays open */}
+                  {/* Theme toggle — stays open (mounted check avoids hydration mismatch) */}
                   <button
                     onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
                     className={rowBtn}
                   >
-                    {resolvedTheme === "dark"
+                    {mounted && resolvedTheme === "dark"
                       ? <Sun className="w-4 h-4 shrink-0" />
                       : <Moon className="w-4 h-4 shrink-0" />}
-                    {resolvedTheme === "dark" ? "Light mode" : "Dark mode"}
+                    {mounted && resolvedTheme === "dark" ? "Light mode" : "Dark mode"}
                   </button>
 
                   <div className="border-t border-border mt-1 pt-2">
                     {user ? (
-                      <button
-                        onClick={signOut}
-                        className="w-full px-4 py-2 bg-muted rounded-full text-foreground font-semibold text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
-                      >
-                        <span className="w-6 h-6 rounded-full bg-primary text-white text-xs flex items-center justify-center font-bold">
-                          {(user.user_metadata?.display_name as string)?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase()}
-                        </span>
-                        Sign out
-                      </button>
+                      <div className="flex flex-col gap-1">
+                        <button
+                          type="button"
+                          className={`${rowBtn} justify-center`}
+                          onClick={() => { setMenuOpen(false); setProfilePopupOpen(true); }}
+                        >
+                          <User className="w-4 h-4 shrink-0" />
+                          User profile
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { signOut(); setMenuOpen(false); }}
+                          className={`${rowBtn} justify-center text-destructive hover:bg-destructive/10`}
+                        >
+                          <LogOut className="w-4 h-4 shrink-0" />
+                          Sign out
+                        </button>
+                      </div>
                     ) : (
                       <button
                         onClick={() => requireAuth(() => {})}
@@ -167,24 +183,55 @@ export function Header() {
           onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
           className={iconBtn}
           title="Toggle theme"
+          suppressHydrationWarning
         >
-          {resolvedTheme === "dark"
+          {mounted && resolvedTheme === "dark"
             ? <Sun className="w-4 h-4 text-gray-600 dark:text-foreground" />
             : <Moon className="w-4 h-4 text-gray-600 dark:text-foreground" />}
         </button>
 
         {user ? (
-          <button
-            onClick={signOut}
-            className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-full text-foreground font-semibold text-sm hover:bg-muted transition-colors"
-          >
-            <span className="w-6 h-6 rounded-full bg-primary text-white text-xs flex items-center justify-center font-bold">
-              {(user.user_metadata?.display_name as string)?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase()}
-            </span>
-            <span className="max-w-[100px] truncate">
-              {(user.user_metadata?.display_name as string) ?? user.email}
-            </span>
-          </button>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setUserMenuOpen((v) => !v)}
+              className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-full text-foreground font-semibold text-sm hover:bg-muted transition-colors"
+            >
+              <span className="w-6 h-6 rounded-full bg-primary text-white text-xs flex items-center justify-center font-bold">
+                {(user.user_metadata?.display_name as string)?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase()}
+              </span>
+              <span className="max-w-[100px] truncate">
+                {(user.user_metadata?.display_name as string) ?? user.email}
+              </span>
+            </button>
+            {userMenuOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-[9998]"
+                  onClick={() => setUserMenuOpen(false)}
+                  aria-hidden
+                />
+                <div className="absolute right-0 top-full mt-2 py-1 min-w-[180px] bg-popover border border-border rounded-xl shadow-xl z-[9999] flex flex-col">
+                  <button
+                    type="button"
+                    onClick={() => { setUserMenuOpen(false); setProfilePopupOpen(true); }}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors w-full text-left"
+                  >
+                    <User className="w-4 h-4 shrink-0" />
+                    User profile
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { signOut(); setUserMenuOpen(false); }}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors w-full text-left"
+                  >
+                    <LogOut className="w-4 h-4 shrink-0" />
+                    Sign out
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         ) : (
           <button
             onClick={() => requireAuth(() => {})}
@@ -194,6 +241,8 @@ export function Header() {
           </button>
         )}
       </div>
+
+      <ProfilePopup open={profilePopupOpen} onClose={() => setProfilePopupOpen(false)} />
     </>
   );
 }
