@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/lib/auth-context"
+import { QueryProvider } from "@/components/query-provider"
 import { cn } from "@/lib/utils"
 
 const figtree = Figtree({ subsets: ["latin"], variable: "--font-sans" })
@@ -76,9 +77,11 @@ export default function RootLayout({
     >
       <body>
         <ThemeProvider defaultTheme="dark">
-          <AuthProvider>
-            {children}
-          </AuthProvider>
+          <QueryProvider>
+            <AuthProvider>
+              {children}
+            </AuthProvider>
+          </QueryProvider>
           <Analytics />
         </ThemeProvider>
       </body>

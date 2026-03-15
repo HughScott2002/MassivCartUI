@@ -1,10 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { Store, ShoppingBasket, Search, X } from "lucide-react";
+import { Store, ShoppingBasket, Search, X, MapPin } from "lucide-react";
+import type { SearchResult } from "@/lib/types";
 
-export function ShopDetailsSheet({ onClose }: { onClose?: () => void }) {
-  const [activeTab, setActiveTab] = useState<"store" | "list">("store");
+interface ShopDetailsSheetProps {
+  onClose?: () => void;
+  results?: SearchResult[];
+  onFlyTo?: (lng: number, lat: number) => void;
+  activeTab?: "store" | "list";
+}
+
+export function ShopDetailsSheet({ onClose, results = [], onFlyTo, activeTab: activeTabProp }: ShopDetailsSheetProps) {
+  const [activeTabLocal, setActiveTabLocal] = useState<"store" | "list">("store");
+  const activeTab = activeTabProp ?? activeTabLocal;
+  const setActiveTab = activeTabProp === undefined ? setActiveTabLocal : () => {};
 
   return (
     <div className="rounded-2xl border border-black/10 dark:border-white/10 bg-card backdrop-blur-md text-foreground shadow-xl overflow-hidden flex flex-col">
@@ -44,18 +54,82 @@ export function ShopDetailsSheet({ onClose }: { onClose?: () => void }) {
       </div>
 
       {/* Content */}
-      <div className="flex-1 p-4">
+      <div className="flex-1 overflow-y-auto max-h-[60vh]">
         {activeTab === "store" ? (
-          <div className="flex flex-col items-center justify-center py-10 gap-3 text-center">
-            <div className="w-12 h-12 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center">
-              <Search className="w-6 h-6 text-muted-foreground" />
+          results.length > 0 ? (
+            <div className="flex flex-col divide-y divide-black/5 dark:divide-white/5">
+              {results.map((result) => {
+                const cheapest = result.prices[0];
+                const others = result.prices.slice(1, 4);
+                return (
+                  <div key={result.product_id} className="p-3">
+                    <div
+                      className="flex items-start justify-between gap-2 cursor-pointer group"
+                      onClick={() => {
+                        if (cheapest?.lng != null && cheapest?.lat != null) {
+                          onFlyTo?.(cheapest.lng, cheapest.lat);
+                        }
+                      }}
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                          {result.canonical_name}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {result.category ?? result.unit_type ?? ""}
+                        </p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="text-sm font-bold text-primary">
+                          J${result.cheapest_price.toFixed(2)}
+                        </p>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1 justify-end">
+                          <MapPin className="w-3 h-3" />
+                          <span className="truncate max-w-[120px]">{result.cheapest_store}</span>
+                          {cheapest?.distance_km != null && (
+                            <span className="text-muted-foreground/60">
+                              {cheapest.distance_km < 1
+                                ? `${Math.round(cheapest.distance_km * 1000)}m`
+                                : `${cheapest.distance_km.toFixed(1)}km`}
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    {others.length > 0 && (
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        {others.map((p) => (
+                          <button
+                            key={p.store_id}
+                            onClick={() => {
+                              if (p.lng != null && p.lat != null) {
+                                onFlyTo?.(p.lng, p.lat);
+                              }
+                            }}
+                            className="inline-flex items-center gap-1 rounded-full bg-black/5 dark:bg-white/5 px-2 py-0.5 text-xs text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                          >
+                            <span>{p.store_name}</span>
+                            <span className="font-medium">J${p.price.toFixed(2)}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-            <p className="text-sm text-muted-foreground">
-              Search for products to see results here
-            </p>
-          </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-10 gap-3 text-center p-4">
+              <div className="w-12 h-12 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center">
+                <Search className="w-6 h-6 text-muted-foreground" />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Search for products to see results here
+              </p>
+            </div>
+          )
         ) : (
-          <div className="flex flex-col items-center justify-center py-10 gap-3 text-center">
+          <div className="flex flex-col items-center justify-center py-10 gap-3 text-center p-4">
             <div className="w-12 h-12 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center">
               <ShoppingBasket className="w-6 h-6 text-muted-foreground" />
             </div>

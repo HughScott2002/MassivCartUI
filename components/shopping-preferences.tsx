@@ -1,8 +1,56 @@
 "use client"
 
-import { useState } from "react";
-import { LayoutDashboard, Store, X } from "lucide-react";
-import { BudgetPopup } from "@/components/budget-popup";
+import { useState, useEffect, useCallback } from "react"
+import { useQuery } from "@tanstack/react-query"
+import { LayoutDashboard, Navigation, X, Eye, EyeOff, Upload, Trophy } from "lucide-react"
+import { useAuth } from "@/lib/auth-context"
+
+const BUDGET_STORAGE_KEY = "massivcart_weekly_budget"
+
+function getStoredBudget(): number {
+  if (typeof window === "undefined") return 0
+  try {
+    const raw = localStorage.getItem(BUDGET_STORAGE_KEY)
+    if (raw == null) return 0
+    const n = Number(raw)
+    return Number.isFinite(n) && n >= 0 ? n : 0
+  } catch {
+    return 0
+  }
+}
+
+function setStoredBudget(value: number) {
+  try {
+    localStorage.setItem(BUDGET_STORAGE_KEY, String(value))
+  } catch {
+    /* ignore */
+  }
+}
+
+// Tier thresholds from CLAUDE.md
+const TIERS = [
+  { key: "shopper", label: "Shopper", min: 0 },
+  { key: "smart_shopper", label: "Smart Shopper", min: 1000 },
+  { key: "price_scout", label: "Price Scout", min: 3000 },
+  { key: "community_champ", label: "Community Champ", min: 7500 },
+  { key: "elite", label: "Elite", min: 15000 },
+]
+
+function getTierInfo(points: number) {
+  let current = TIERS[0]
+  let next = TIERS[1]
+  for (let i = TIERS.length - 1; i >= 0; i--) {
+    if (points >= TIERS[i].min) {
+      current = TIERS[i]
+      next = TIERS[i + 1] ?? null
+      break
+    }
+  }
+  const progress = next
+    ? ((points - current.min) / (next.min - current.min)) * 100
+    : 100
+  return { current, next, progress: Math.min(progress, 100) }
+}
 
 const savingsOptions = [
   { label: "Quick Trip", maxStores: 1, radiusKm: 3 },
@@ -11,18 +59,68 @@ const savingsOptions = [
   { label: "Extreme", maxStores: 5, radiusKm: 40 },
 ]
 
-export function ShoppingPreferences({ onClose }: { onClose?: () => void }) {
-  const [activeTab, setActiveTab] = useState<"dashboard" | "route">("dashboard");
-  const [budgetOpen, setBudgetOpen] = useState(false);
-  const [budget, setBudget] = useState(0);
-  const cartTotal = 0; // Wire to cart context when available
-  const [savingsMode, setSavingsMode] = useState(2);
-  const selected = savingsOptions[savingsMode];
+interface ShoppingPreferencesProps {
+  onClose?: () => void
+  savingsMode: number
+  onSavingsModeChange: (v: number) => void
+}
+
+export function ShoppingPreferences({ onClose, savingsMode, onSavingsModeChange }: ShoppingPreferencesProps) {
+  const [activeTab, setActiveTab] = useState<"dashboard" | "route">("dashboard")
+  const [budget, setBudgetState] = useState(0)
+  const [budgetVisible, setBudgetVisible] = useState(true)
+  const { user } = useAuth()
+
+  const { data } = useQuery({
+    queryKey: ["dashboard", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null
+      const res = await fetch(`/api/dashboard?userId=${user.id}`)
+      if (!res.ok) return null
+      return res.json()
+    },
+    enabled: !!user?.id,
+    staleTime: 30_000, // matches Redis TTL of 30s for user data
+  })
+
+  useEffect(() => {
+    setBudgetState(getStoredBudget())
+  }, [])
+
+  const setBudget = useCallback(
+    (value: number | ((prev: number) => number)) => {
+      setBudgetState((prev) => {
+        const next = typeof value === "function" ? value(prev) : value
+        const n = Number.isFinite(next) && next >= 0 ? next : 0
+        setStoredBudget(n)
+        return n
+      })
+    },
+    []
+  )
+
+  const points = data?.points ?? 0
+  const streak = data?.streak_days ?? 0
+  const weeklyUploads = data?.weekly_uploads ?? 0
+  const weeklyGoal = data?.weekly_upload_goal ?? 5
+  // TODO: no API equivalent yet for cart total and amount saved
+  const cartTotal = 0
+  const saved = 0
+
+  const selected = savingsOptions[savingsMode]
+  const budgetPercent =
+    budget > 0 ? Math.min((cartTotal / budget) * 100, 100) : 0
+  const isOver = budget > 0 && cartTotal > budget
+  const {
+    current: tier,
+    next: nextTier,
+    progress: tierProgress,
+  } = getTierInfo(points)
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-black/10 bg-card text-foreground shadow-xl backdrop-blur-md dark:border-white/10">
+    <div className="overflow-hidden rounded-2xl border border-border bg-card text-foreground shadow-xl backdrop-blur-md">
       {/* Tab switcher */}
-      <div className="flex border-b border-black/10 dark:border-white/10">
+      <div className="flex border-b border-border">
         <button
           onClick={() => setActiveTab("dashboard")}
           className={`flex flex-1 items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
@@ -42,95 +140,232 @@ export function ShoppingPreferences({ onClose }: { onClose?: () => void }) {
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          <Store className="h-4 w-4" />
+          <Navigation className="h-4 w-4" />
           Route
         </button>
         {onClose && (
           <button
             onClick={onClose}
-            className="px-3 text-muted-foreground hover:text-foreground transition-colors"
+            className="px-3 text-muted-foreground transition-colors hover:text-foreground"
             aria-label="Close panel"
           >
-            <X className="w-4 h-4" />
+            <X className="h-4 w-4" />
           </button>
         )}
       </div>
 
-        {/* Budget summary bar - click anywhere to open popup and edit */}
-        <button
-          type="button"
-          onClick={() => setBudgetOpen(true)}
-          className="w-full bg-primary px-4 py-3 flex flex-col gap-1 text-left cursor-pointer hover:bg-primary/90 transition-colors"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-white uppercase tracking-wider">Weekly Budget</span>
+      {/* Tab content */}
+      {activeTab === "dashboard" ? (
+        <>
+          {/* Weekly Budget — Dashboard only, solid green */}
+          <div className="flex flex-col gap-3 bg-primary px-4 py-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-extrabold tracking-widest text-white uppercase">
+                Weekly Budget
+              </h3>
+              <button
+                type="button"
+                onClick={() => setBudgetVisible((v) => !v)}
+                className="rounded-lg p-1.5 text-white/80 transition-colors hover:bg-white/20 hover:text-white"
+                aria-label={budgetVisible ? "Hide budget" : "Show budget"}
+              >
+                {budgetVisible ? (
+                  <Eye className="h-4 w-4" />
+                ) : (
+                  <EyeOff className="h-4 w-4" />
+                )}
+              </button>
+            </div>
+
+            {/* Big budget number */}
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-black text-white/70">J$</span>
+              {budgetVisible ? (
+                <input
+                  type="number"
+                  min={0}
+                  value={budget || ""}
+                  onChange={(e) => setBudget(Number(e.target.value) || 0)}
+                  placeholder="0"
+                  className="w-full min-w-0 [appearance:textfield] border-0 bg-transparent text-6xl leading-none font-black text-white outline-none placeholder:text-white/40 focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                />
+              ) : (
+                <span className="text-6xl leading-none font-black text-white/40">
+                  ••••
+                </span>
+              )}
+            </div>
+
+            {/* Current basket — inline within budget block */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[0.7rem] font-semibold tracking-wider text-white/70 uppercase">
+                  Current Basket
+                </span>
+                {budgetVisible && (
+                  <span className="text-xs font-bold text-white tabular-nums">
+                    J${cartTotal.toLocaleString()}
+                  </span>
+                )}
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-white/20">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${isOver ? "bg-red-300" : "bg-white/80"}`}
+                  style={{ width: `${budgetPercent}%` }}
+                />
+              </div>
+              {budgetVisible && (
+                <p className="text-[0.7rem] font-semibold tracking-wider text-white/70 uppercase">
+                  {budgetPercent.toFixed(0)}% used
+                  {budget > 0 && (
+                    <span className="ml-1">
+                      · J${Math.abs(budget - cartTotal).toLocaleString()}{" "}
+                      {isOver ? "over" : "remaining"}
+                    </span>
+                  )}
+                </p>
+              )}
+            </div>
           </div>
-          <div className="flex items-center justify-between">
-            <span className="text-lg font-bold text-white">J${budget || 0}</span>
-            <span className="text-sm font-bold text-white">Cart: J${cartTotal.toFixed(0)}</span>
-          </div>
-        </button>
-      <div className="p-4 space-y-4">
-        {activeTab === "dashboard" ? (
-          <>
-            {/* Scout Points placeholder */}
-            <div className="space-y-1">
-              <p className="text-xs tracking-wider text-muted-foreground uppercase">
-                Scout Points
-              </p>
-              <p className="text-2xl font-bold text-primary">0 pts</p>
-              <p className="text-xs text-muted-foreground">
-                Shopper tier · 0% to Smart Shopper
-              </p>
-              <div className="mt-1 h-1.5 w-full rounded-full bg-black/10 dark:bg-white/10">
-                <div className="h-full w-0 rounded-full bg-primary" />
+
+          {/* Stats grid */}
+          <div className="space-y-3 p-4">
+            {/* Points + Streak */}
+            <div className="flex gap-2">
+              <div className="flex-1 rounded-xl bg-primary/10 px-3 py-2 text-center">
+                <p className="text-xs font-medium text-muted-foreground">Scout Points</p>
+                <p className="text-lg font-bold text-primary">{points.toLocaleString()}</p>
+              </div>
+              <div className="flex-1 rounded-xl bg-orange-500/10 px-3 py-2 text-center">
+                <p className="text-xs font-medium text-muted-foreground">Streak</p>
+                <p className="text-lg font-bold text-orange-500">🔥 {streak}d</p>
               </div>
             </div>
 
-          </>
-        ) : (
-          <>
-            {/* Savings mode */}
-            <div className="space-y-3">
-              <p className="text-xs tracking-wider text-muted-foreground uppercase">
-                Savings Mode
-              </p>
-              <div className="space-y-2">
-                {savingsOptions.map((opt, i) => (
-                  <button
-                    key={opt.label}
-                    onClick={() => setSavingsMode(i)}
-                    className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm transition-colors ${
-                      savingsMode === i
-                        ? "border border-primary/50 bg-primary/20 text-primary"
-                        : "border border-black/10 bg-black/5 text-muted-foreground hover:text-foreground dark:border-white/10 dark:bg-white/5"
-                    }`}
-                  >
-                    <span className="font-medium">{opt.label}</span>
-                    <span className="text-xs">
-                      {opt.maxStores} store{opt.maxStores > 1 ? "s" : ""} ·{" "}
-                      {opt.radiusKm}km
-                    </span>
-                  </button>
+            {/* Life Saved */}
+            <div className="rounded-xl bg-primary/[0.08] px-3 py-2.5">
+              <p className="text-xs font-medium text-muted-foreground">Life Saved</p>
+              <p className="text-base font-bold text-primary">J${saved.toLocaleString()}</p>
+            </div>
+
+            {/* Weekly Uploads — segment bars */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                  <Upload className="h-3 w-3" /> Weekly Uploads
+                </span>
+                <span className="text-xs text-muted-foreground">{weeklyUploads}/{weeklyGoal}</span>
+              </div>
+              <div className="flex gap-1">
+                {Array.from({ length: weeklyGoal }).map((_, i) => (
+                  <div
+                    key={i}
+                    className={`h-2 flex-1 rounded-full transition-all duration-300 ${i < weeklyUploads ? "bg-primary" : "bg-muted"}`}
+                  />
                 ))}
               </div>
-              <p className="text-center text-xs text-muted-foreground">
-                Up to {selected.maxStores} store
-                {selected.maxStores > 1 ? "s" : ""} · {selected.radiusKm}km
-                radius
-              </p>
             </div>
-          </>
-        )}
-      </div>
 
-      <BudgetPopup
-        open={budgetOpen}
-        onClose={() => setBudgetOpen(false)}
-        budget={budget}
-        onBudgetChange={setBudget}
-        currentSpend={cartTotal}
-      />
+            {/* Tier */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                  <Trophy className="h-3 w-3" /> Tier
+                </span>
+                <span className="text-xs font-semibold text-primary">{tier.label}</span>
+              </div>
+              {nextTier && (
+                <>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all duration-500"
+                      style={{ width: `${tierProgress}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">{tierProgress.toFixed(0)}% to {nextTier.label}</p>
+                </>
+              )}
+            </div>
+          </div>
+        </>
+      ) : (
+        /* Route tab — savings mode slider only */
+        <div className="space-y-5 p-4">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-foreground">Savings Mode</span>
+              <span className={`text-sm font-semibold ${savingsMode === 3 ? "text-orange-500" : "text-primary"}`}>
+                {selected.label}
+              </span>
+            </div>
+            <div className="relative">
+              <input
+                type="range"
+                min={0}
+                max={3}
+                value={savingsMode}
+                onChange={(e) => onSavingsModeChange(Number(e.target.value))}
+                className="w-full h-2 bg-muted rounded-full appearance-none cursor-pointer
+                  [&::-webkit-slider-thumb]:appearance-none
+                  [&::-webkit-slider-thumb]:w-6
+                  [&::-webkit-slider-thumb]:h-6
+                  [&::-webkit-slider-thumb]:bg-background
+                  [&::-webkit-slider-thumb]:rounded-full
+                  [&::-webkit-slider-thumb]:shadow-lg
+                  [&::-webkit-slider-thumb]:border-2
+                  [&::-webkit-slider-thumb]:border-primary
+                  [&::-webkit-slider-thumb]:cursor-pointer
+                  [&::-moz-range-thumb]:w-6
+                  [&::-moz-range-thumb]:h-6
+                  [&::-moz-range-thumb]:bg-background
+                  [&::-moz-range-thumb]:rounded-full
+                  [&::-moz-range-thumb]:shadow-lg
+                  [&::-moz-range-thumb]:border-2
+                  [&::-moz-range-thumb]:border-primary
+                  [&::-moz-range-thumb]:cursor-pointer"
+              />
+              <div className="flex justify-between mt-1 px-1">
+                {savingsOptions.map((_, i) => (
+                  <div
+                    key={i}
+                    className={`w-1.5 h-1.5 rounded-full transition-colors ${
+                      i <= savingsMode
+                        ? savingsMode === 3 ? "bg-orange-500" : "bg-primary"
+                        : "bg-muted-foreground/30"
+                    }`}
+                  />
+                ))}
+              </div>
+              <div className="flex justify-between text-xs text-muted-foreground px-0.5 mt-1">
+                <span>Quick</span>
+                <span>Extreme</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-muted-foreground">Max Stores</span>
+              <span className="text-xs text-muted-foreground/60 italic">auto</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-1">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div
+                  key={i}
+                  className={`h-6 flex-1 rounded-md transition-all duration-300 ${
+                    i < selected.maxStores
+                      ? savingsMode === 3 ? "bg-orange-400/60" : "bg-primary/50"
+                      : "bg-muted border border-border"
+                  }`}
+                />
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground/60 px-0.5">
+              {selected.maxStores} store{selected.maxStores > 1 ? "s" : ""} · {selected.maxStores === 1 ? "within" : "up to"} {selected.radiusKm} km{selected.maxStores > 1 ? " away" : ""}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
