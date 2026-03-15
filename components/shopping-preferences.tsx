@@ -1,28 +1,54 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react";
-import { LayoutDashboard, Store, X, Eye, EyeOff } from "lucide-react";
+import { useState, useEffect, useCallback } from "react"
+import { LayoutDashboard, Navigation, X, Eye, EyeOff } from "lucide-react"
 
-const BUDGET_STORAGE_KEY = "massivcart_weekly_budget";
+const BUDGET_STORAGE_KEY = "massivcart_weekly_budget"
 
 function getStoredBudget(): number {
-  if (typeof window === "undefined") return 0;
+  if (typeof window === "undefined") return 0
   try {
-    const raw = localStorage.getItem(BUDGET_STORAGE_KEY);
-    if (raw == null) return 0;
-    const n = Number(raw);
-    return Number.isFinite(n) && n >= 0 ? n : 0;
+    const raw = localStorage.getItem(BUDGET_STORAGE_KEY)
+    if (raw == null) return 0
+    const n = Number(raw)
+    return Number.isFinite(n) && n >= 0 ? n : 0
   } catch {
-    return 0;
+    return 0
   }
 }
 
 function setStoredBudget(value: number) {
   try {
-    localStorage.setItem(BUDGET_STORAGE_KEY, String(value));
+    localStorage.setItem(BUDGET_STORAGE_KEY, String(value))
   } catch {
     /* ignore */
   }
+}
+
+// Tier thresholds from CLAUDE.md
+const TIERS = [
+  { key: "shopper", label: "Shopper", min: 0 },
+  { key: "smart_shopper", label: "Smart Shopper", min: 1000 },
+  { key: "price_scout", label: "Price Scout", min: 3000 },
+  { key: "community_champ", label: "Community Champ", min: 7500 },
+  { key: "elite", label: "Elite", min: 15000 },
+]
+
+function getTierInfo(points: number) {
+  let current = TIERS[0]
+  let next = TIERS[1]
+  for (let i = TIERS.length - 1; i >= 0; i--) {
+    if (points >= TIERS[i].min) {
+      current = TIERS[i]
+      next = TIERS[i + 1] ?? null
+      break
+    }
+  }
+  const progress = next
+    ? ((points - current.min) / (next.min - current.min)) * 100
+    : 100
+  const remaining = next ? next.min - points : 0
+  return { current, next, progress: Math.min(progress, 100), remaining }
 }
 
 const savingsOptions = [
@@ -32,35 +58,49 @@ const savingsOptions = [
   { label: "Extreme", maxStores: 5, radiusKm: 40 },
 ]
 
+// Dummy data — wire to API in Phase 6
+const DUMMY_POINTS = 1250
+const DUMMY_CART_TOTAL = 3750
+
 export function ShoppingPreferences({ onClose }: { onClose?: () => void }) {
-  const [activeTab, setActiveTab] = useState<"dashboard" | "route">("dashboard");
-  const [budget, setBudgetState] = useState(0);
-  const [budgetVisible, setBudgetVisible] = useState(true);
+  const [activeTab, setActiveTab] = useState<"dashboard" | "route">("dashboard")
+  const [budget, setBudgetState] = useState(0)
+  const [budgetVisible, setBudgetVisible] = useState(true)
+  const [savingsMode, setSavingsMode] = useState(2)
 
-  // Hydrate from localStorage on mount
   useEffect(() => {
-    setBudgetState(getStoredBudget());
-  }, []);
+    setBudgetState(getStoredBudget())
+  }, [])
 
-  const setBudget = useCallback((value: number | ((prev: number) => number)) => {
-    setBudgetState((prev) => {
-      const next = typeof value === "function" ? value(prev) : value;
-      const n = Number.isFinite(next) && next >= 0 ? next : 0;
-      setStoredBudget(n);
-      return n;
-    });
-  }, []);
-  const cartTotal = 0; // Wire to cart context when available
-  const [savingsMode, setSavingsMode] = useState(2);
-  const selected = savingsOptions[savingsMode];
+  const setBudget = useCallback(
+    (value: number | ((prev: number) => number)) => {
+      setBudgetState((prev) => {
+        const next = typeof value === "function" ? value(prev) : value
+        const n = Number.isFinite(next) && next >= 0 ? next : 0
+        setStoredBudget(n)
+        return n
+      })
+    },
+    []
+  )
 
-  const budgetPercent = budget > 0 ? (cartTotal / budget) * 100 : 0;
-  const isOver = budgetPercent > 100;
+  const cartTotal = DUMMY_CART_TOTAL
+  const points = DUMMY_POINTS
+  const selected = savingsOptions[savingsMode]
+  const budgetPercent =
+    budget > 0 ? Math.min((cartTotal / budget) * 100, 100) : 0
+  const isOver = budget > 0 && cartTotal > budget
+  const {
+    current: tier,
+    next: nextTier,
+    progress: tierProgress,
+    remaining,
+  } = getTierInfo(points)
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-black/10 bg-card text-foreground shadow-xl backdrop-blur-md dark:border-white/10">
+    <div className="overflow-hidden rounded-2xl border border-border bg-card text-foreground shadow-xl backdrop-blur-md">
       {/* Tab switcher */}
-      <div className="flex border-b border-black/10 dark:border-white/10">
+      <div className="flex border-b border-border">
         <button
           onClick={() => setActiveTab("dashboard")}
           className={`flex flex-1 items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
@@ -80,37 +120,43 @@ export function ShoppingPreferences({ onClose }: { onClose?: () => void }) {
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          <Store className="h-4 w-4" />
+          <Navigation className="h-4 w-4" />
           Route
         </button>
         {onClose && (
           <button
             onClick={onClose}
-            className="px-3 text-muted-foreground hover:text-foreground transition-colors"
+            className="px-3 text-muted-foreground transition-colors hover:text-foreground"
             aria-label="Close panel"
           >
-            <X className="w-4 h-4" />
+            <X className="h-4 w-4" />
           </button>
         )}
       </div>
 
-      {/* Weekly Budget — inline, no popup */}
-      <div className="bg-primary px-4 py-4 flex flex-col gap-3">
-        <div className="flex items-center justify-between gap-2">
-          <h3 className="text-sm font-extrabold text-white uppercase tracking-widest drop-shadow-sm">
+      {/* Weekly Budget — always visible, solid green */}
+      <div className="flex flex-col gap-3 bg-primary px-4 py-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-extrabold tracking-widest text-white uppercase">
             Weekly Budget
           </h3>
           <button
             type="button"
             onClick={() => setBudgetVisible((v) => !v)}
-            className="p-1.5 rounded-lg text-white/90 hover:text-white hover:bg-white/20 transition-colors"
+            className="rounded-lg p-1.5 text-white/80 transition-colors hover:bg-white/20 hover:text-white"
             aria-label={budgetVisible ? "Hide budget" : "Show budget"}
           >
-            {budgetVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+            {budgetVisible ? (
+              <Eye className="h-4 w-4" />
+            ) : (
+              <EyeOff className="h-4 w-4" />
+            )}
           </button>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xl font-extrabold text-white tabular-nums">J$</span>
+
+        {/* Big budget number */}
+        <div className="flex items-baseline gap-1">
+          <span className="text-3xl font-black text-white/70">J$</span>
           {budgetVisible ? (
             <input
               type="number"
@@ -118,69 +164,84 @@ export function ShoppingPreferences({ onClose }: { onClose?: () => void }) {
               value={budget || ""}
               onChange={(e) => setBudget(Number(e.target.value) || 0)}
               placeholder="0"
-              className="flex-1 min-w-0 text-2xl font-black text-white bg-transparent px-1 py-0.5 border-0 outline-none focus:ring-0 focus:outline-none placeholder:text-white/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              className="w-full min-w-0 [appearance:textfield] border-0 bg-transparent text-6xl leading-none font-black text-white outline-none placeholder:text-white/40 focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             />
           ) : (
-            <span className="text-xl font-extrabold text-white/80">••••••</span>
-          )}
-        </div>
-        {/* Current basket progression bar — directly under budget */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[0.7rem] font-semibold text-white/90 uppercase tracking-wider">
-              Current basket
+            <span className="text-6xl leading-none font-black text-white/40">
+              ••••
             </span>
-            {budgetVisible && (
-              <span className="text-xs font-bold text-white tabular-nums">
-                J${cartTotal.toFixed(0)}
-              </span>
-            )}
-          </div>
-          <div className="h-2.5 w-full rounded-full bg-emerald-400/60 dark:bg-emerald-300/50 overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-500 ${
-                isOver ? "bg-white" : "bg-white"
-              }`}
-              style={{ width: `${Math.min(budgetPercent, 100)}%` }}
-            />
-          </div>
-          {budgetVisible && (
-            <p className="text-[0.65rem] font-medium text-white/80">
-              {budgetPercent.toFixed(0)}% used
-              {budget > 0 && (
-                <span className="ml-1">
-                  · J${Math.abs(budget - cartTotal).toFixed(0)}{" "}
-                  {cartTotal <= budget ? "remaining" : "over"}
-                </span>
-              )}
-            </p>
           )}
         </div>
       </div>
+      {/* Current basket */}
+      <div className="mx-6 my-6 space-y-1.5">
+        <div className="flex items-center justify-between">
+          <span className="text-[0.7rem] font-semibold tracking-wider uppercase">
+            Current Basket
+          </span>
+          {budgetVisible && (
+            <span className="text-xs font-bold text-white tabular-nums">
+              J${cartTotal.toLocaleString()}
+            </span>
+          )}
+        </div>
+        <div className="h-2 w-full overflow-hidden rounded-full bg-white/20">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${isOver ? "bg-red-300" : "bg-primary"}`}
+            style={{ width: `${budgetPercent}%` }}
+          />
+        </div>
+        {budgetVisible && (
+          <p className="text-[0.7rem] font-semibold tracking-wider uppercase
+          ">
+            {budgetPercent.toFixed(0)}% used
+            {budget > 0 && (
+              <span className="ml-1">
+                · J${Math.abs(budget - cartTotal).toLocaleString()}{" "}
+                {isOver ? "over" : "remaining"}
+              </span>
+            )}
+          </p>
+        )}
+      </div>
 
-      <div className="p-4 space-y-4">
+      {/* Tab content */}
+      <div className="space-y-4 p-4">
         {activeTab === "dashboard" ? (
           <>
-            {/* Scout Points placeholder */}
-            <div className="space-y-1">
-              <p className="text-xs tracking-wider text-muted-foreground uppercase">
+            {/* Scout Points */}
+            <div className="space-y-2">
+              <p className="text-xs tracking-widest text-muted-foreground uppercase">
                 Scout Points
               </p>
-              <p className="text-2xl font-bold text-primary">0 pts</p>
-              <p className="text-xs text-muted-foreground">
-                Shopper tier · 0% to Smart Shopper
+              <p className="leading-none tabular-nums">
+                <span className="text-6xl font-black text-primary">
+                  {points.toLocaleString()}
+                </span>
+                <span className="text-3xl font-black text-primary"> pts</span>
               </p>
-              <div className="mt-1 h-1.5 w-full rounded-full bg-black/10 dark:bg-white/10">
-                <div className="h-full w-0 rounded-full bg-primary" />
+              <p className="text-xs text-muted-foreground">
+                {tier.label} tier
+                {nextTier && (
+                  <span>
+                    {" "}
+                    · {remaining.toLocaleString()} pts to {nextTier.label}
+                  </span>
+                )}
+              </p>
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-border">
+                <div
+                  className="h-full rounded-full bg-primary transition-all duration-500"
+                  style={{ width: `${tierProgress}%` }}
+                />
               </div>
             </div>
-
           </>
         ) : (
           <>
             {/* Savings mode */}
             <div className="space-y-3">
-              <p className="text-xs tracking-wider text-muted-foreground uppercase">
+              <p className="text-xs tracking-widest text-muted-foreground uppercase">
                 Savings Mode
               </p>
               <div className="space-y-2">
@@ -188,14 +249,14 @@ export function ShoppingPreferences({ onClose }: { onClose?: () => void }) {
                   <button
                     key={opt.label}
                     onClick={() => setSavingsMode(i)}
-                    className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm transition-colors ${
+                    className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-sm transition-colors ${
                       savingsMode === i
-                        ? "border border-primary/50 bg-primary/20 text-primary"
-                        : "border border-black/10 bg-black/5 text-muted-foreground hover:text-foreground dark:border-white/10 dark:bg-white/5"
+                        ? "border-primary/50 bg-primary/10 text-primary"
+                        : "border-border bg-muted/40 text-muted-foreground hover:text-foreground"
                     }`}
                   >
                     <span className="font-medium">{opt.label}</span>
-                    <span className="text-xs">
+                    <span className="text-xs tabular-nums">
                       {opt.maxStores} store{opt.maxStores > 1 ? "s" : ""} ·{" "}
                       {opt.radiusKm}km
                     </span>

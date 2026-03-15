@@ -1,16 +1,23 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Header } from "@/components/header"
 import { ShoppingPreferences } from "@/components/shopping-preferences"
 import { ShopDetailsSheet } from "@/components/shop-details-sheet"
 import { CommandBar } from "@/components/command-bar"
+import { MapBackground } from "@/components/map-background"
+import type { POI } from "@/lib/poi-provider"
 import { LayoutDashboard, ShoppingBasket, Store } from "lucide-react"
 
 export default function Page() {
   const [leftOpen, setLeftOpen] = useState(true)
   const [rightOpen, setRightOpen] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
+  const flyToRef  = useRef<((lng: number, lat: number) => void) | null>(null)
+  const locateRef = useRef<(() => void) | null>(null)
+  const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null)
+  const [, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [, setAtLocation]   = useState(false)
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 639px)")
@@ -32,14 +39,16 @@ export default function Page() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-background">
 
-      {/* Map placeholder — replaced with Mapbox in Phase 2 */}
-      <div className="absolute inset-0 bg-background">
-        <div
-          className="absolute inset-0 opacity-10 dark:opacity-20"
-          style={{
-            backgroundImage: `radial-gradient(circle at 30% 50%, #00d26a22 0%, transparent 50%),
-                              radial-gradient(circle at 70% 30%, #3b82f622 0%, transparent 40%)`,
-          }}
+      {/* Map — Phase 2: Mapbox GL */}
+      <div className="absolute inset-0">
+        <MapBackground
+          selectedStoreId={selectedStoreId}
+          onStoreSelect={(poi: POI | null) => setSelectedStoreId(poi?.id ?? null)}
+          activeCategory="all"
+          flyToRef={flyToRef}
+          locateRef={locateRef}
+          onAtLocationChange={setAtLocation}
+          onLocationChange={setUserLocation}
         />
       </div>
 

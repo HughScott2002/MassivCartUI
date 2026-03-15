@@ -1,11 +1,22 @@
 "use client";
 
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback, useState, useRef } from "react";
 import type { RefObject } from "react";
+import { useTheme } from "next-themes";
+import Map, { Marker, NavigationControl } from "react-map-gl/mapbox";
+import type { MapRef } from "react-map-gl/mapbox";
+import "mapbox-gl/dist/mapbox-gl.css";
 import type { POI } from "@/lib/poi-provider";
+import { KINGSTON_STORES } from "@/lib/poi-provider";
 import { MapPin } from "lucide-react";
 
 const LOCATION_CONSENT_KEY = "massivcart-location-consent";
+
+const INITIAL_VIEW = {
+  longitude: -76.7936,
+  latitude:  17.9970,
+  zoom:      12,
+};
 
 interface MapBackgroundProps {
   selectedStoreId: string | null;
@@ -23,8 +34,19 @@ export function MapBackground({
   onAtLocationChange,
   onLocationChange,
 }: MapBackgroundProps) {
+  const mapRef = useRef<MapRef>(null);
+  const { resolvedTheme } = useTheme();
+  const mapStyle = resolvedTheme === "dark"
+    ? "mapbox://styles/mapbox/dark-v11"
+    : "mapbox://styles/mapbox/standard";
   const [showPermissionPopup, setShowPermissionPopup] = useState(false);
   const [permissionChecked, setPermissionChecked] = useState(false);
+
+  const flyToImpl = useCallback((lng: number, lat: number) => {
+    mapRef.current?.flyTo({ center: [lng, lat], zoom: 15, duration: 1800 });
+    onLocationChange({ lat, lng });
+    onAtLocationChange(true);
+  }, [onLocationChange, onAtLocationChange]);
 
   const locateImpl = useCallback(() => {
     if (navigator.geolocation) {
@@ -34,14 +56,14 @@ export function MapBackground({
           const lng = pos.coords.longitude;
           onLocationChange({ lat, lng });
           onAtLocationChange(true);
-          flyToRef.current?.(lng, lat);
+          flyToImpl(lng, lat);
         },
         () => onAtLocationChange(false),
       );
     } else {
       onAtLocationChange(false);
     }
-  }, [flyToRef, onLocationChange, onAtLocationChange]);
+  }, [flyToImpl, onLocationChange, onAtLocationChange]);
 
   const handleAllow = useCallback(() => {
     setShowPermissionPopup(false);
@@ -58,14 +80,6 @@ export function MapBackground({
     }
     onAtLocationChange(false);
   }, [onAtLocationChange]);
-
-  const flyToImpl = useCallback(
-    (lng: number, lat: number) => {
-      onLocationChange({ lat, lng });
-      onAtLocationChange(true);
-    },
-    [onLocationChange, onAtLocationChange],
-  );
 
   useEffect(() => {
     const mutable = locateRef as React.MutableRefObject<(() => void) | null>;
@@ -101,15 +115,25 @@ export function MapBackground({
 
   return (
     <>
-      <div
-        className="absolute inset-0 bg-gray-200"
-        role="img"
-        aria-label="Map background placeholder"
+      <Map
+        ref={mapRef}
+        mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
+        initialViewState={INITIAL_VIEW}
+        style={{ width: "100%", height: "100%" }}
+        mapStyle={mapStyle}
       >
-        <div className="flex h-full items-center justify-center text-gray-500">
-          Map placeholder (integrate Mapbox/Google Maps)
-        </div>
-      </div>
+        <NavigationControl position="bottom-right" />
+        {KINGSTON_STORES.map((poi) => (
+          <Marker
+            key={poi.id}
+            longitude={poi.lng}
+            latitude={poi.lat}
+            anchor="bottom"
+          >
+            <div className="w-3 h-3 rounded-full bg-primary border-2 border-white shadow-md cursor-pointer" />
+          </Marker>
+        ))}
+      </Map>
 
       {showPermissionPopup && (
         <>
