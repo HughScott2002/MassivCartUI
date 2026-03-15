@@ -1,8 +1,29 @@
 "use client"
 
-import { useState } from "react";
-import { LayoutDashboard, Store, X } from "lucide-react";
-import { BudgetPopup } from "@/components/budget-popup";
+import { useState, useEffect, useCallback } from "react";
+import { LayoutDashboard, Store, X, Eye, EyeOff } from "lucide-react";
+
+const BUDGET_STORAGE_KEY = "massivcart_weekly_budget";
+
+function getStoredBudget(): number {
+  if (typeof window === "undefined") return 0;
+  try {
+    const raw = localStorage.getItem(BUDGET_STORAGE_KEY);
+    if (raw == null) return 0;
+    const n = Number(raw);
+    return Number.isFinite(n) && n >= 0 ? n : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function setStoredBudget(value: number) {
+  try {
+    localStorage.setItem(BUDGET_STORAGE_KEY, String(value));
+  } catch {
+    /* ignore */
+  }
+}
 
 const savingsOptions = [
   { label: "Quick Trip", maxStores: 1, radiusKm: 3 },
@@ -13,11 +34,28 @@ const savingsOptions = [
 
 export function ShoppingPreferences({ onClose }: { onClose?: () => void }) {
   const [activeTab, setActiveTab] = useState<"dashboard" | "route">("dashboard");
-  const [budgetOpen, setBudgetOpen] = useState(false);
-  const [budget, setBudget] = useState(0);
+  const [budget, setBudgetState] = useState(0);
+  const [budgetVisible, setBudgetVisible] = useState(true);
+
+  // Hydrate from localStorage on mount
+  useEffect(() => {
+    setBudgetState(getStoredBudget());
+  }, []);
+
+  const setBudget = useCallback((value: number | ((prev: number) => number)) => {
+    setBudgetState((prev) => {
+      const next = typeof value === "function" ? value(prev) : value;
+      const n = Number.isFinite(next) && next >= 0 ? next : 0;
+      setStoredBudget(n);
+      return n;
+    });
+  }, []);
   const cartTotal = 0; // Wire to cart context when available
   const [savingsMode, setSavingsMode] = useState(2);
   const selected = savingsOptions[savingsMode];
+
+  const budgetPercent = budget > 0 ? (cartTotal / budget) * 100 : 0;
+  const isOver = budgetPercent > 100;
 
   return (
     <div className="overflow-hidden rounded-2xl border border-black/10 bg-card text-foreground shadow-xl backdrop-blur-md dark:border-white/10">
@@ -56,20 +94,70 @@ export function ShoppingPreferences({ onClose }: { onClose?: () => void }) {
         )}
       </div>
 
-        {/* Budget summary bar - click anywhere to open popup and edit */}
-        <button
-          type="button"
-          onClick={() => setBudgetOpen(true)}
-          className="w-full bg-primary px-4 py-3 flex flex-col gap-1 text-left cursor-pointer hover:bg-primary/90 transition-colors"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-white uppercase tracking-wider">Weekly Budget</span>
+      {/* Weekly Budget — inline, no popup */}
+      <div className="bg-primary px-4 py-4 flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-sm font-extrabold text-white uppercase tracking-widest drop-shadow-sm">
+            Weekly Budget
+          </h3>
+          <button
+            type="button"
+            onClick={() => setBudgetVisible((v) => !v)}
+            className="p-1.5 rounded-lg text-white/90 hover:text-white hover:bg-white/20 transition-colors"
+            aria-label={budgetVisible ? "Hide budget" : "Show budget"}
+          >
+            {budgetVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+          </button>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xl font-extrabold text-white tabular-nums">J$</span>
+          {budgetVisible ? (
+            <input
+              type="number"
+              min={0}
+              value={budget || ""}
+              onChange={(e) => setBudget(Number(e.target.value) || 0)}
+              placeholder="0"
+              className="flex-1 min-w-0 text-2xl font-black text-white bg-transparent px-1 py-0.5 border-0 outline-none focus:ring-0 focus:outline-none placeholder:text-white/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            />
+          ) : (
+            <span className="text-xl font-extrabold text-white/80">••••••</span>
+          )}
+        </div>
+        {/* Current basket progression bar — directly under budget */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[0.7rem] font-semibold text-white/90 uppercase tracking-wider">
+              Current basket
+            </span>
+            {budgetVisible && (
+              <span className="text-xs font-bold text-white tabular-nums">
+                J${cartTotal.toFixed(0)}
+              </span>
+            )}
           </div>
-          <div className="flex items-center justify-between">
-            <span className="text-lg font-bold text-white">J${budget || 0}</span>
-            <span className="text-sm font-bold text-white">Cart: J${cartTotal.toFixed(0)}</span>
+          <div className="h-2.5 w-full rounded-full bg-emerald-400/60 dark:bg-emerald-300/50 overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-500 ${
+                isOver ? "bg-white" : "bg-white"
+              }`}
+              style={{ width: `${Math.min(budgetPercent, 100)}%` }}
+            />
           </div>
-        </button>
+          {budgetVisible && (
+            <p className="text-[0.65rem] font-medium text-white/80">
+              {budgetPercent.toFixed(0)}% used
+              {budget > 0 && (
+                <span className="ml-1">
+                  · J${Math.abs(budget - cartTotal).toFixed(0)}{" "}
+                  {cartTotal <= budget ? "remaining" : "over"}
+                </span>
+              )}
+            </p>
+          )}
+        </div>
+      </div>
+
       <div className="p-4 space-y-4">
         {activeTab === "dashboard" ? (
           <>
@@ -123,14 +211,6 @@ export function ShoppingPreferences({ onClose }: { onClose?: () => void }) {
           </>
         )}
       </div>
-
-      <BudgetPopup
-        open={budgetOpen}
-        onClose={() => setBudgetOpen(false)}
-        budget={budget}
-        onBudgetChange={setBudget}
-        currentSpend={cartTotal}
-      />
     </div>
   )
 }

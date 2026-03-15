@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef, useState } from "react"
-import { Sparkles, Plus, Send } from "lucide-react"
+import { Sparkles, Scan, Send } from "lucide-react"
 
 interface CommandBarProps {
   onScanReceipt?: () => void
@@ -80,7 +80,7 @@ export function CommandBar({ onScanReceipt }: CommandBarProps) {
               className="group relative flex shrink-0 items-center gap-2 overflow-hidden rounded-xl bg-green-600 px-4 py-2.5 text-sm font-medium text-white transition-all duration-300 ease-out hover:scale-[1.02] hover:bg-green-500 hover:shadow-xl hover:shadow-green-600/30 active:scale-[0.98]"
             >
               <span className="relative">Scan Receipt</span>
-              <Plus className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+              <Scan className="h-4 w-4 shrink-0" strokeWidth={2.5} />
             </button>
           ) : (
             /* Send button - shown when user has typed */
