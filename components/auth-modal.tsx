@@ -42,9 +42,10 @@ function isPasswordValid(value: string): boolean {
 
 interface AuthModalProps {
   onClose: () => void;
+  onSignedUp?: () => void;
 }
 
-export function AuthModal({ onClose }: AuthModalProps) {
+export function AuthModal({ onClose, onSignedUp }: AuthModalProps) {
   const { signIn, signUp, signInWithGoogle } = useAuth();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
@@ -74,6 +75,8 @@ export function AuthModal({ onClose }: AuthModalProps) {
 
     if (err) {
       setError(err);
+    } else if (mode === "signup") {
+      onSignedUp?.();
     }
   };
 

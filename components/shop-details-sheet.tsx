@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Store, ShoppingBasket, Search, X, MapPin, ListPlus, Trash2 } from "lucide-react";
+import { Store, ShoppingBasket, Search, X, MapPin, ListPlus, Trash2, Navigation } from "lucide-react";
 import type { SearchResult, SearchResultPrice, ListItem } from "@/lib/types";
 
 interface ShopDetailsSheetProps {
@@ -13,9 +13,10 @@ interface ShopDetailsSheetProps {
   onFlyTo?: (lng: number, lat: number) => void;
   activeTab?: "store" | "list";
   onTabChange?: (tab: "store" | "list") => void;
+  onShowRoute?: () => void;
 }
 
-export function ShopDetailsSheet({ onClose, results = [], listItems = [], onAddToList, onRemoveFromList, onFlyTo, activeTab: activeTabProp, onTabChange }: ShopDetailsSheetProps) {
+export function ShopDetailsSheet({ onClose, results = [], listItems = [], onAddToList, onRemoveFromList, onFlyTo, activeTab: activeTabProp, onTabChange, onShowRoute }: ShopDetailsSheetProps) {
   const [activeTabLocal, setActiveTabLocal] = useState<"store" | "list">("store");
   const activeTab = activeTabProp ?? activeTabLocal;
   const setActiveTab = (tab: "store" | "list") => {
@@ -60,7 +61,7 @@ export function ShopDetailsSheet({ onClose, results = [], listItems = [], onAddT
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto max-h-[60vh]">
+      <div className="flex-1 overflow-y-auto max-h-[56vh]">
         {activeTab === "store" ? (
           results.length > 0 ? (
             <div className="flex flex-col divide-y divide-black/5 dark:divide-white/5">
@@ -179,6 +180,26 @@ export function ShopDetailsSheet({ onClose, results = [], listItems = [], onAddT
           </div>
         )}
       </div>
+
+      {/* Show Route button — only in My List tab when 2+ stores have coords */}
+      {activeTab === "list" && (() => {
+        const storesWithCoords = new Set(
+          listItems.filter(i => i.lat != null && i.lng != null).map(i => i.store_id)
+        );
+        if (storesWithCoords.size < 2) return null;
+        return (
+          <div className="shrink-0 border-t border-black/5 dark:border-white/5 p-3">
+            <button
+              type="button"
+              onClick={onShowRoute}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary/90"
+            >
+              <Navigation className="h-4 w-4" />
+              Show Route ({storesWithCoords.size} stops)
+            </button>
+          </div>
+        );
+      })()}
     </div>
   );
 }

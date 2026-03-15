@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import type { RefObject } from "react";
 import { useTheme } from "next-themes";
 import { useQuery } from "@tanstack/react-query";
-import Map, { Marker } from "react-map-gl/mapbox";
+import Map, { Marker, Source, Layer } from "react-map-gl/mapbox";
 import type { MapRef } from "react-map-gl/mapbox";
 import { Store, Pill, Package, Hammer, Fuel, MapPin } from "lucide-react";
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -39,6 +39,13 @@ interface Bounds {
   maxLng: number;
 }
 
+interface RouteStop {
+  lat: number;
+  lng: number;
+  store_name: string;
+  stop_num: number;
+}
+
 interface MapBackgroundProps {
   selectedStoreId: string | null;
   onStoreSelect: (store: POI | null) => void;
@@ -47,6 +54,8 @@ interface MapBackgroundProps {
   flyToRef: RefObject<((lng: number, lat: number) => void) | null>;
   onAtLocationChange: (at: boolean) => void;
   onLocationChange: (loc: { lat: number; lng: number } | null) => void;
+  routeStops?: RouteStop[];
+  fitRouteRef: RefObject<(() => void) | null>;
 }
 
 export function MapBackground({
@@ -57,6 +66,8 @@ export function MapBackground({
   flyToRef,
   onAtLocationChange,
   onLocationChange,
+  routeStops,
+  fitRouteRef,
 }: MapBackgroundProps) {
   const mapRef = useRef<MapRef>(null);
   const moveFrameRef = useRef(0);
@@ -136,6 +147,22 @@ export function MapBackground({
     mutable.current = flyToImpl;
     return () => { mutable.current = null; };
   }, [flyToRef, flyToImpl]);
+
+  const fitRouteImpl = useCallback(() => {
+    if (!routeStops || routeStops.length === 0) return;
+    const lngs = routeStops.map(s => s.lng);
+    const lats = routeStops.map(s => s.lat);
+    mapRef.current?.fitBounds(
+      [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]],
+      { padding: 80, duration: 1200, maxZoom: 15 }
+    );
+  }, [routeStops]);
+
+  useEffect(() => {
+    const mutable = fitRouteRef as React.MutableRefObject<(() => void) | null>;
+    mutable.current = fitRouteImpl;
+    return () => { mutable.current = null; };
+  }, [fitRouteRef, fitRouteImpl]);
 
   // Consent check on mount
   useEffect(() => {
@@ -250,6 +277,41 @@ export function MapBackground({
             </Marker>
           );
         })}
+
+        {/* Route line + numbered stop markers */}
+        {routeStops && routeStops.length >= 2 && (() => {
+          const geojson: GeoJSON.Feature<GeoJSON.LineString> = {
+            type: "Feature",
+            properties: {},
+            geometry: {
+              type: "LineString",
+              coordinates: routeStops.map(s => [s.lng, s.lat]),
+            },
+          };
+          const lineLayer = {
+            id: "route-line",
+            type: "line" as const,
+            paint: {
+              "line-color": "#6366f1",
+              "line-width": 3,
+              "line-dasharray": [2, 1.5],
+            },
+          };
+          return (
+            <>
+              <Source id="route" type="geojson" data={geojson}>
+                <Layer {...lineLayer} />
+              </Source>
+              {routeStops.map((stop) => (
+                <Marker key={stop.stop_num} longitude={stop.lng} latitude={stop.lat} anchor="center">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[10px] font-black text-white shadow-lg ring-2 ring-white">
+                    {stop.stop_num}
+                  </div>
+                </Marker>
+              ))}
+            </>
+          );
+        })()}
 
         {/* User location dot */}
         <Marker longitude={centerLng} latitude={centerLat} anchor="center">
