@@ -10,10 +10,10 @@ export function NotificationBell() {
     <div className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="p-2.5 rounded-full bg-white/90 dark:bg-white/10 backdrop-blur-sm hover:bg-white dark:hover:bg-white/20 transition-colors border border-gray-200 dark:border-border shadow-sm"
+        className="p-2.5 rounded-full bg-card border border-border hover:bg-muted transition-colors shadow-sm"
         aria-label="Notifications"
       >
-        <Bell className="w-4 h-4 text-gray-600 dark:text-foreground" />
+        <Bell className="w-4 h-4 text-foreground" />
       </button>
 
       {open && (

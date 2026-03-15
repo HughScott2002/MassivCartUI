@@ -63,9 +63,11 @@ interface ShoppingPreferencesProps {
   onClose?: () => void
   savingsMode: number
   onSavingsModeChange: (v: number) => void
+  /** Sum of list/basket item prices (from My List) for budget calculation */
+  cartTotal?: number
 }
 
-export function ShoppingPreferences({ onClose, savingsMode, onSavingsModeChange }: ShoppingPreferencesProps) {
+export function ShoppingPreferences({ onClose, savingsMode, onSavingsModeChange, cartTotal: cartTotalProp = 0 }: ShoppingPreferencesProps) {
   const [activeTab, setActiveTab] = useState<"dashboard" | "route">("dashboard")
   const [budget, setBudgetState] = useState(0)
   const [budgetVisible, setBudgetVisible] = useState(true)
@@ -103,8 +105,7 @@ export function ShoppingPreferences({ onClose, savingsMode, onSavingsModeChange 
   const streak = data?.streak_days ?? 0
   const weeklyUploads = data?.weekly_uploads ?? 0
   const weeklyGoal = data?.weekly_upload_goal ?? 5
-  // TODO: no API equivalent yet for cart total and amount saved
-  const cartTotal = 0
+  const cartTotal = cartTotalProp
   const saved = 0
 
   const selected = savingsOptions[savingsMode]

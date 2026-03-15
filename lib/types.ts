@@ -9,6 +9,7 @@ export interface SearchResultPrice {
   distance_km: number | null
   lat: number | null
   lng: number | null
+  place_id: string | null
 }
 
 export interface SearchResult {
@@ -19,6 +20,20 @@ export interface SearchResult {
   cheapest_price: number
   cheapest_store: string
   prices: SearchResultPrice[]
+}
+
+/** One product from a specific store, as added to My List */
+export interface ListItem {
+  product_id: number
+  store_id: number
+  canonical_name: string
+  category: string | null
+  unit_type: string | null
+  price: number
+  store_name: string
+  branch: string | null
+  lat: number | null
+  lng: number | null
 }
 
 export interface ReceiptItem {

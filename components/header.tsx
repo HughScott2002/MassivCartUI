@@ -19,7 +19,7 @@ import { ProfilePopup } from "./profile-popup"
 import { cn } from "@/lib/utils"
 
 const iconBtn =
-  "p-2.5 rounded-full bg-white/90 dark:bg-white/10 backdrop-blur-sm hover:bg-white dark:hover:bg-white/20 transition-colors border border-gray-200 dark:border-border shadow-sm"
+  "p-2.5 rounded-full bg-card border border-border hover:bg-muted transition-colors shadow-sm"
 
 const rowBtn =
   "flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-medium text-foreground w-full text-left"
@@ -151,7 +151,7 @@ export function Header({
       {/* ── Desktop: action buttons top-right ── */}
       <div className="fixed top-4 right-4 z-30 hidden items-center gap-2 sm:flex sm:gap-3">
         <button onClick={() => locateRef?.current?.()} className={iconBtn} title="Go to my location">
-          <LocateFixed className="h-4 w-4 text-gray-600 dark:text-foreground" />
+          <LocateFixed className="h-4 w-4 text-foreground" />
         </button>
 
         <GridMenu selectedType={activeCategory} onSelect={onCategoryChange} />
@@ -165,9 +165,9 @@ export function Header({
           suppressHydrationWarning
         >
           {mounted && resolvedTheme === "dark" ? (
-            <Sun className="h-4 w-4 text-gray-600 dark:text-foreground" />
+            <Sun className="h-4 w-4 text-foreground" />
           ) : (
-            <Moon className="h-4 w-4 text-gray-600 dark:text-foreground" />
+            <Moon className="h-4 w-4 text-foreground" />
           )}
         </button>
 
