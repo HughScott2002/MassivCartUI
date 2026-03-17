@@ -9,9 +9,30 @@ import { MapBackground } from "@/components/map-background"
 import { TutorialOverlay } from "@/components/tutorial-overlay"
 import { useAuth } from "@/lib/auth-context"
 import type { POI } from "@/lib/poi-provider"
+import type { POICategory } from "@/lib/poi-provider"
 import { LayoutDashboard, ShoppingBasket, Store } from "lucide-react"
 import type { SearchResult, ListItem } from "@/lib/types"
-import { DEMO_RESULTS } from "@/lib/demo-results"
+
+const CATEGORY_TERMS: Record<POICategory, string[]> = {
+  grocery:   ["rice", "chicken", "bread", "cooking oil", "flour", "sugar", "milk", "beef", "butter", "cheese", "pasta", "crackers", "cereal", "juice", "soda", "water", "salt", "cornmeal", "sardines", "tuna"],
+  pharmacy:  ["paracetamol", "ibuprofen", "vitamins", "bandage", "antiseptic", "cough syrup", "panadol", "aspirin", "antacid", "strepsils", "dettol", "gaviscon", "nurofen", "baby"],
+  wholesale: ["rice", "flour", "sugar", "cooking oil", "chicken", "pasta", "canned goods", "cornmeal", "butter", "milk", "sardines", "crackers"],
+  hardware:  ["cement", "paint", "lumber", "nails", "pipe", "wire", "rebar", "plywood", "screws", "tape", "hammer", "stain"],
+  fuel:      ["gas", "diesel", "petrol", "fuel", "kerosene"],
+}
+
+/** Deterministic per-store shuffle so each pin shows a distinct product ordering. */
+function seededShuffle<T>(arr: T[], seed: string): T[] {
+  let h = 0
+  for (let i = 0; i < seed.length; i++) { h = Math.imul(31, h) + seed.charCodeAt(i) | 0 }
+  const result = [...arr]
+  for (let i = result.length - 1; i > 0; i--) {
+    h = Math.imul(1664525, h) + 1013904223 | 0
+    const j = Math.abs(h) % (i + 1);
+    [result[i], result[j]] = [result[j]!, result[i]!]
+  }
+  return result
+}
 
 export default function Page() {
   const { showTutorial, dismissTutorial } = useAuth()
@@ -114,27 +135,16 @@ export default function Page() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          terms: ["rice", "chicken", "bread", "cooking oil", "flour", "sugar", "milk", "beef"],
-          savingsMode: 1,
+          terms: CATEGORY_TERMS[poi.category],
+          savingsMode,
           userLat: poi.lat,
           userLng: poi.lng,
         }),
       })
       const data = await res.json() as SearchResult[]
-      const filtered = data
-        .map(r => ({
-          ...r,
-          prices: r.prices.filter(p => p.place_id === poi.id),
-        }))
-        .filter(r => r.prices.length > 0)
-        .map(r => ({
-          ...r,
-          cheapest_price: r.prices[0].price,
-          cheapest_store: r.prices[0].store_name,
-        }))
-      setSearchResults(filtered.length > 0 ? filtered : (data.length > 0 ? data : DEMO_RESULTS))
+      setSearchResults(seededShuffle(data, poi.id))
     } catch {
-      setSearchResults(DEMO_RESULTS)
+      setSearchResults([])
     }
   }
 
@@ -255,6 +265,13 @@ export default function Page() {
       )}
 
       {/* Command bar */}
+      {/* Pre-alpha badge */}
+      <div className="pointer-events-none fixed bottom-[5.5rem] left-4 z-20">
+        <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-400">
+          Pre-Alpha
+        </span>
+      </div>
+
       <CommandBar
         savingsMode={savingsMode}
         activeTab={rightTab}
@@ -262,6 +279,7 @@ export default function Page() {
         onSearchResults={(results) => {
           setSearchResults(results)
           setRightTab("store")
+          setRightOpen(true)
         }}
         onAddToList={handleAddToList}
         onTabChange={setRightTab}
