@@ -57,6 +57,11 @@ export const metadata: Metadata = {
     ],
     apple: "/apple-icon.png",
   },
+  verification: {
+    other: {
+      "claude-verify": "claude-site-verify-massivcart-2026",
+    },
+  },
 }
 
 export default function RootLayout({
