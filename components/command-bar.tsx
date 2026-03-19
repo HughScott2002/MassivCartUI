@@ -1,7 +1,6 @@
 "use client"
 
 import { useRef, useState } from "react"
-import { useQueryClient } from "@tanstack/react-query"
 import { Sparkles, ScanLine, Send, MapPin, ListPlus, X, CheckCircle, AlertCircle } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import type { SearchResult, SearchResultPrice, ReceiptData, ReceiptItem } from "@/lib/types"
@@ -79,7 +78,6 @@ export function CommandBar({
   onTabChange,
   onPointsAwarded,
 }: CommandBarProps) {
-  const queryClient = useQueryClient()
   const [inputValue, setInputValue] = useState("")
   const intent = activeTab === "list" ? "list" : "find"
   const [isSearching, setIsSearching] = useState(false)
@@ -134,7 +132,6 @@ export function CommandBar({
     e.target.value = ""
     setUploadState("scanning")
     setUploadLabel("Compressing…")
-
     try {
       const blob = await resizeImage(file)
       setUploadLabel("Uploading…")
@@ -159,45 +156,68 @@ export function CommandBar({
     }
   }
 
-  async function handleConfirm() {
-    if (!user) {
-      addToast("warn", "Sign in to earn points.")
+  async function handleListFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ""
+    if (!file) return
+    if (!onAddToList) {
+      addToast("warn", "Adding to list is not available.")
       return
     }
-    if (!receiptData) return
-    setUploadState("submitting")
-    setSubmitError(null)
-
+    setIsListUploading(true)
+    let added = 0
+    let noMatch = 0
     try {
-      const res = await fetch("/api/receipt/confirm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          receiptData: { ...receiptData, items: receiptItems, total: receiptTotal },
-          userId: user.id,
-          category: receiptData.imageType ?? selectedCategoryRef.current,
-          storeAddress,
-        }),
-      })
-      const data = (await res.json()) as { receiptId?: number; pointsAwarded?: number; error?: string }
-      if (!res.ok) {
-        setSubmitError(data.error ?? "Failed to confirm.")
-        setUploadState("review")
+      const text = await file.text()
+      const lines = text
+        .split(/\r?\n/)
+        .map((s) => s.trim())
+        .filter(Boolean)
+      if (lines.length === 0) {
+        addToast("warn", "File is empty or has no valid lines.")
         return
       }
-      setUploadState("done")
-      setShowPointsFloat(true)
-      queryClient.invalidateQueries({ queryKey: ["dashboard", user?.id] })
-      onPointsAwarded?.()
-      addToast("success", "+100 Scout Points earned!")
-      setTimeout(() => {
-        setUploadState("idle")
-        setReceiptData(null)
-        setShowPointsFloat(false)
-      }, 2500)
+      addToast("success", `Searching stores for ${lines.length} item${lines.length === 1 ? "" : "s"}…`)
+      for (const line of lines) {
+        try {
+          const res = await fetch("/api/command", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              message: line,
+              intent: "find",
+              savingsMode,
+              userLat: userLocation?.lat,
+              userLng: userLocation?.lng,
+            }),
+          })
+          const data = (await res.json()) as { results?: SearchResult[]; error?: string }
+          const result = data.results?.[0]
+          const cheapest = result?.prices?.[0]
+          if (result && cheapest) {
+            onAddToList(result, cheapest)
+            added++
+          } else {
+            noMatch++
+          }
+        } catch {
+          noMatch++
+        }
+      }
+      onTabChange?.("list")
+      if (added > 0) {
+        addToast("success", `Added ${added} item${added === 1 ? "" : "s"} at best prices. Review in My List.`)
+      }
+      if (noMatch > 0) {
+        addToast("warn", `${noMatch} line${noMatch === 1 ? "" : "s"} had no matches.`)
+      }
+      if (added === 0 && noMatch > 0) {
+        addToast("warn", "No items could be matched. Try product names like \"rice\" or \"milk\".")
+      }
     } catch {
-      setSubmitError("Network error. Try again.")
-      setUploadState("review")
+      addToast("error", "Could not read file. Use a .txt or .csv with one item per line.")
+    } finally {
+      setIsListUploading(false)
     }
   }
 
@@ -269,8 +289,8 @@ export function CommandBar({
           userLng: userLocation?.lng ?? KINGSTON_LNG,
         }),
       })
-      const data = await res.json() as SearchResult[]
-      onSearchResults(data.length > 0 ? data : DEMO_RESULTS)
+      const data = (await res.json()) as SearchResult[]
+      onSearchResults(data?.length > 0 ? data : DEMO_RESULTS)
     } catch {
       onSearchResults(DEMO_RESULTS)
     } finally {
@@ -278,105 +298,75 @@ export function CommandBar({
     }
   }
 
-  async function handleListFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    e.target.value = ""
-    if (!file) return
-    if (!onAddToList) {
-      addToast("warn", "Adding to list is not available.")
+  async function handleConfirm() {
+    if (!user) {
+      addToast("warn", "Sign in to earn points.")
       return
     }
-    setIsListUploading(true)
-    let added = 0
-    let noMatch = 0
+    if (!receiptData) return
+    setUploadState("submitting")
+    setSubmitError(null)
     try {
-      const text = await file.text()
-      const lines = text
-        .split(/\r?\n/)
-        .map((s) => s.trim())
-        .filter(Boolean)
-      if (lines.length === 0) {
-        addToast("warn", "File is empty or has no valid lines.")
+      const res = await fetch("/api/receipt/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          receiptData: { ...receiptData, items: receiptItems, total: receiptTotal },
+          userId: user.id,
+          category: receiptData.imageType ?? selectedCategoryRef.current,
+          storeAddress,
+        }),
+      })
+      const data = (await res.json()) as { receiptId?: number; pointsAwarded?: number; error?: string }
+      if (!res.ok) {
+        setSubmitError(data.error ?? "Failed to confirm.")
+        setUploadState("review")
         return
       }
-      addToast("success", `Searching stores for ${lines.length} item${lines.length === 1 ? "" : "s"}…`)
-      for (const line of lines) {
-        try {
-          const res = await fetch("/api/command", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              message: line,
-              intent: "find",
-              savingsMode,
-              userLat: userLocation?.lat,
-              userLng: userLocation?.lng,
-            }),
-          })
-          const data = (await res.json()) as { results?: SearchResult[]; error?: string }
-          const result = data.results?.[0]
-          const cheapest = result?.prices?.[0]
-          if (result && cheapest) {
-            onAddToList(result, cheapest)
-            added++
-          } else {
-            noMatch++
-          }
-        } catch {
-          noMatch++
-        }
-      }
-      onTabChange?.("list")
-      if (added > 0) {
-        addToast("success", `Added ${added} item${added === 1 ? "" : "s"} at best prices. Review in My List.`)
-      }
-      if (noMatch > 0) {
-        addToast("warn", `${noMatch} line${noMatch === 1 ? "" : "s"} had no matches.`)
-      }
-      if (added === 0 && noMatch > 0) {
-        addToast("warn", "No items could be matched. Try product names like \"rice\" or \"milk\".")
-      }
+      setUploadState("done")
+      setShowPointsFloat(true)
+      onPointsAwarded?.()
+      addToast("success", "+100 Scout Points earned!")
+      setTimeout(() => {
+        setUploadState("idle")
+        setReceiptData(null)
+        setShowPointsFloat(false)
+      }, 2500)
     } catch {
-      addToast("error", "Could not read file. Use a .txt or .csv with one item per line.")
-    } finally {
-      setIsListUploading(false)
+      setSubmitError("Network error. Try again.")
+      setUploadState("review")
     }
   }
 
   return (
     <div className="fixed inset-x-4 bottom-6 z-30">
       <div className="mx-auto max-w-2xl space-y-2">
-        {/* Toasts */}
-        <div className="pointer-events-none space-y-1.5">
-          {toasts.map((t) => (
-            <div
-              key={t.id}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium shadow-lg animate-in fade-in slide-in-from-bottom-2 ${
-                t.type === "success"
-                  ? "bg-primary text-white"
-                  : t.type === "warn"
-                  ? "bg-amber-500 text-white"
-                  : "bg-destructive text-white"
-              }`}
-            >
-              {t.type === "success" ? (
-                <CheckCircle className="h-4 w-4 shrink-0" />
-              ) : (
-                <AlertCircle className="h-4 w-4 shrink-0" />
-              )}
-              {t.message}
-            </div>
-          ))}
-        </div>
+        {toasts.map((t) => (
+          <div
+            key={t.id}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium shadow-lg animate-in fade-in slide-in-from-bottom-2 ${
+              t.type === "success"
+                ? "bg-primary text-white"
+                : t.type === "warn"
+                ? "bg-amber-500 text-white"
+                : "bg-destructive text-white"
+            }`}
+          >
+            {t.type === "success" ? (
+              <CheckCircle className="h-4 w-4 shrink-0" />
+            ) : (
+              <AlertCircle className="h-4 w-4 shrink-0" />
+            )}
+            {t.message}
+          </div>
+        ))}
 
-        {/* +100 pts float animation */}
         {showPointsFloat && (
           <div className="pointer-events-none text-center animate-in fade-in slide-in-from-bottom-4">
             <span className="text-2xl font-black text-primary drop-shadow-lg">+100 pts</span>
           </div>
         )}
 
-        {/* Scan category chooser (replaces intent pills while open) */}
         {showCategoryChooser && (
           <div className="flex flex-wrap items-center gap-2">
             {SCAN_CATEGORIES.map((cat) => (
@@ -397,7 +387,6 @@ export function CommandBar({
           </div>
         )}
 
-        {/* Intent pills (hidden when category chooser is open or upload is in progress) */}
         {!showCategoryChooser && uploadState === "idle" && (
           <div className="flex items-center gap-2">
             <button
@@ -424,12 +413,9 @@ export function CommandBar({
           </div>
         )}
 
-        {/* Address confirmation panel */}
         {uploadState === "address" && receiptData && (
           <div className="space-y-3 rounded-2xl border border-border bg-card p-4 shadow-xl">
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              Confirm store
-            </p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Confirm store</p>
             <input
               className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
               value={storeAddress}
@@ -444,10 +430,7 @@ export function CommandBar({
                 Looks good →
               </button>
               <button
-                onClick={() => {
-                  setUploadState("idle")
-                  setReceiptData(null)
-                }}
+                onClick={() => { setUploadState("idle"); setReceiptData(null) }}
                 className="rounded-xl border border-border bg-card px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
                 <X className="h-4 w-4" />
@@ -456,18 +439,12 @@ export function CommandBar({
           </div>
         )}
 
-        {/* Inline review panel */}
         {(uploadState === "review" || uploadState === "submitting") && receiptData && (
           <div className="flex max-h-64 flex-col rounded-2xl border border-border bg-card shadow-xl">
             <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-2.5">
-              <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                Review items
-              </span>
+              <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Review items</span>
               <button
-                onClick={() => {
-                  setUploadState("idle")
-                  setReceiptData(null)
-                }}
+                onClick={() => { setUploadState("idle"); setReceiptData(null) }}
                 className="text-muted-foreground transition-colors hover:text-foreground"
               >
                 <X className="h-4 w-4" />
@@ -505,19 +482,12 @@ export function CommandBar({
                 disabled={uploadState === "submitting" || receiptItems.length === 0}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary/90 disabled:opacity-50"
               >
-                {uploadState === "submitting" ? (
-                  <ThreeDots />
-                ) : (
-                  <>
-                    <CheckCircle className="h-4 w-4" /> Confirm &amp; Earn 100 pts
-                  </>
-                )}
+                {uploadState === "submitting" ? <ThreeDots /> : <><CheckCircle className="h-4 w-4" /> Confirm &amp; Earn 100 pts</>}
               </button>
             </div>
           </div>
         )}
 
-        {/* Hidden file input (receipt/scan) */}
         <input
           ref={fileInputRef}
           type="file"
@@ -526,7 +496,6 @@ export function CommandBar({
           className="hidden"
           onChange={handleFileChange}
         />
-        {/* Hidden file input (list upload: .txt, .csv) */}
         <input
           ref={listFileInputRef}
           type="file"
@@ -535,9 +504,7 @@ export function CommandBar({
           onChange={handleListFileChange}
         />
 
-        {/* Main bar */}
         <div className="flex h-14 items-center gap-2 rounded-2xl border border-border bg-card px-3 shadow-xl backdrop-blur-md sm:gap-3 sm:px-4">
-          {/* Sparkles + MASSIV label */}
           <div className="flex shrink-0 flex-col items-center justify-center">
             <Sparkles className="h-5 w-5 text-primary" />
             <span className="mt-0.5 text-[0.5rem] font-black uppercase leading-none tracking-widest text-muted-foreground">
@@ -545,7 +512,6 @@ export function CommandBar({
             </span>
           </div>
 
-          {/* Input or upload progress */}
           {isUploading ? (
             <div className="flex flex-1 items-center gap-2 text-muted-foreground">
               <ThreeDots />
@@ -556,33 +522,21 @@ export function CommandBar({
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleSubmit()
-              }}
-              placeholder={
-                user ? "Search for products, prices, stores..." : "Sign in to search..."
-              }
+              onKeyDown={(e) => { if (e.key === "Enter") handleSubmit() }}
+              placeholder={user ? "Search for products, prices, stores..." : "Sign in to search..."}
               className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
             />
           )}
 
-          {/* Right action */}
           {showScanPill ? (
             <button
               type="button"
               onClick={handleScanClick}
               disabled={isUploading}
-<<<<<<< HEAD
               className="group relative flex shrink-0 items-center gap-1.5 overflow-hidden rounded-lg bg-primary px-2.5 py-2 text-xs font-medium text-white transition-all duration-300 ease-out hover:scale-[1.02] hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/30 active:scale-[0.98] disabled:opacity-60 sm:gap-2 sm:rounded-xl sm:px-4 sm:py-2.5 sm:text-sm"
             >
               <span className="relative">Scan Receipt</span>
               <ScanLine className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" strokeWidth={2.5} />
-=======
-              className="group relative flex shrink-0 items-center gap-1.5 overflow-hidden rounded-xl bg-primary px-2.5 py-2.5 text-sm font-medium text-white transition-all duration-300 ease-out hover:scale-[1.02] hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/30 active:scale-[0.98] disabled:opacity-60 sm:gap-2 sm:px-4"
-            >
-              <span className="relative hidden sm:inline">Scan Receipt</span>
-              <ScanLine className="h-4 w-4 shrink-0" strokeWidth={2.5} />
->>>>>>> 27c2ba879b2039161cd18f7973370d4298279edb
             </button>
           ) : isUploading ? null : (
             <button

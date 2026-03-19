@@ -3,11 +3,11 @@ import { sleep } from 'k6';
 
 export const options = {
   vus: 1500,   // concurrent users
-  duration: '30s'
+  duration: '90s'
 };
 
 export default function () {
-  http.get('https://massivecart-api-k6pf2424tq-uc.a.run.app/');
+  http.get('https://www.massivcart.com/');
   sleep(1);
 }
 
