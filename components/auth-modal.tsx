@@ -54,6 +54,7 @@ export function AuthModal({ onClose, onSignedUp }: AuthModalProps) {
   const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [consented, setConsented] = useState(false);
 
   const handlePasswordChange = useCallback((value: string) => {
     setPassword(value);
@@ -81,6 +82,7 @@ export function AuthModal({ onClose, onSignedUp }: AuthModalProps) {
   };
 
   const passwordValid = mode === "signin" || isPasswordValid(password);
+  const canSubmit = passwordValid && (mode === "signin" || consented);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -161,13 +163,27 @@ export function AuthModal({ onClose, onSignedUp }: AuthModalProps) {
             )}
           </div>
 
+          {mode === "signup" && (
+            <label className="flex items-start gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={consented}
+                onChange={(e) => setConsented(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-primary cursor-pointer"
+              />
+              <span className="text-xs text-muted-foreground leading-relaxed">
+                I understand that my data will only be used for the purposes of this hackathon demonstration and will not be shared or used commercially.
+              </span>
+            </label>
+          )}
+
           {error && (
             <p className="text-red-500 text-xs">{error}</p>
           )}
 
           <button
             type="submit"
-            disabled={loading || !passwordValid}
+            disabled={loading || !canSubmit}
             className="w-full py-2.5 bg-primary text-primary-foreground rounded-xl font-semibold text-sm disabled:opacity-60"
           >
             {loading ? "..." : mode === "signup" ? "Create account" : "Sign in"}

@@ -11,12 +11,12 @@ import {
 import { useState } from "react";
 
 const storeTypes = [
-  { id: "all", label: "All", icon: GalleryHorizontalEnd, color: "text-lime-500" },
-  { id: "grocery", label: "Grocery", icon: ShoppingCart, color: "text-emerald-500" },
-  { id: "hardware", label: "Hardware", icon: Wrench, color: "text-orange-500" },
-  { id: "wholesale", label: "Wholesale", icon: Package, color: "text-blue-500" },
-  { id: "pharmacy", label: "Pharmacy", icon: Pill, color: "text-pink-500" },
-  { id: "fuel", label: "Fuel", icon: Fuel, color: "text-amber-500" },
+  { id: "all", label: "All", icon: GalleryHorizontalEnd, color: "text-foreground" },
+  { id: "grocery", label: "Grocery", icon: ShoppingCart, color: "text-emerald-600" },
+  { id: "wholesale", label: "Wholesale", icon: Package, color: "text-orange-600" },
+  { id: "hardware", label: "Hardware", icon: Wrench, color: "text-yellow-600" },
+  { id: "pharmacy", label: "Pharmacy", icon: Pill, color: "text-blue-600" },
+  { id: "fuel", label: "Fuel", icon: Fuel, color: "text-red-500" },
 ];
 
 interface GridMenuProps {
