@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, useMemo } from "react"
+import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { Header } from "@/components/header"
 import { ShoppingPreferences } from "@/components/shopping-preferences"
 import { ShopDetailsSheet } from "@/components/shop-details-sheet"
@@ -11,6 +11,7 @@ import { useAuth } from "@/lib/auth-context"
 import type { POI } from "@/lib/poi-provider"
 import type { POICategory } from "@/lib/poi-provider"
 import { LayoutDashboard, ShoppingBasket, Store } from "lucide-react"
+import { MassiveAiChat, MassiveAiChatFab, MassiveAiChatDesktopTeaser } from "@/components/massive-ai-chat"
 import type { SearchResult, ListItem } from "@/lib/types"
 
 const CATEGORY_TERMS: Record<POICategory, string[]> = {
@@ -49,6 +50,7 @@ export default function Page() {
   const [listItems, setListItems] = useState<ListItem[]>([])
   const [activeCategory, setActiveCategory] = useState("all")
   const [showPointsToast, setShowPointsToast] = useState(false)
+  const [chatOpen, setChatOpen] = useState(false)
 
   function handleAddToList(
     result: SearchResult,
@@ -96,6 +98,44 @@ export default function Page() {
   // Lifted state for CommandBar / ShoppingPreferences sync
   const [rightTab, setRightTab] = useState<"store" | "list">("store")
   const [savingsMode, setSavingsMode] = useState(2)
+
+  const handleChatListConfirm = useCallback(
+    async (lines: string[]): Promise<boolean> => {
+      const merged: SearchResult[] = []
+      const seen = new Set<number>()
+      for (const line of lines) {
+        try {
+          const res = await fetch("/api/command", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              message: line,
+              intent: "find",
+              savingsMode,
+              userLat: userLocation?.lat,
+              userLng: userLocation?.lng,
+            }),
+          })
+          const data = (await res.json()) as { results?: SearchResult[] }
+          const r = data.results?.[0]
+          if (r && !seen.has(r.product_id)) {
+            seen.add(r.product_id)
+            merged.push(r)
+          }
+        } catch {
+          /* skip line */
+        }
+      }
+      if (merged.length > 0) {
+        setSearchResults(merged)
+        setRightTab("store")
+        setRightOpen(true)
+        return true
+      }
+      return false
+    },
+    [savingsMode, userLocation?.lat, userLocation?.lng],
+  )
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 639px)")
@@ -224,6 +264,10 @@ export default function Page() {
           >
             <Store className="w-5 h-5" />
           </button>
+          <MassiveAiChatFab
+            onClick={() => setChatOpen(true)}
+            className={chatOpen ? "border-primary bg-primary text-white hover:bg-primary" : ""}
+          />
         </div>
       )}
 
@@ -243,6 +287,10 @@ export default function Page() {
         >
           <ShoppingBasket className="w-4 h-4" />
         </button>
+      )}
+
+      {!isMobile && (
+        <MassiveAiChatDesktopTeaser chatOpen={chatOpen} onClick={() => setChatOpen(true)} />
       )}
 
       {/* Mobile overlay backdrop when a panel is open */}
@@ -284,6 +332,14 @@ export default function Page() {
         onAddToList={handleAddToList}
         onTabChange={setRightTab}
         onPointsAwarded={() => setShowPointsToast(true)}
+      />
+
+      <MassiveAiChat
+        open={chatOpen}
+        onClose={() => setChatOpen(false)}
+        savingsMode={savingsMode}
+        userLocation={userLocation}
+        onListConfirmed={handleChatListConfirm}
       />
     </main>
   )

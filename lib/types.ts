@@ -45,6 +45,15 @@ export interface ReceiptItem {
   dosage?: string
 }
 
+/** Massive AI chat (persisted in localStorage) */
+export interface ChatMessage {
+  id: string
+  role: "user" | "assistant"
+  content: string
+  /** When set, user can confirm to run price search per line (Store panel) */
+  suggestedList?: string[] | null
+}
+
 export interface ReceiptData {
   store?: string | null
   address?: string | null

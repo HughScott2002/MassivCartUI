@@ -12,6 +12,15 @@ const nextConfig = {
         source: "/api/admin/:path*",
         destination: "/api/admin/:path*",
       },
+      // Next.js API routes (not Express): command + chat proxy/fallback in-repo
+      {
+        source: "/api/command",
+        destination: "/api/command",
+      },
+      {
+        source: "/api/chat",
+        destination: "/api/chat",
+      },
       // Everything else under /api goes to Express
       {
         source: "/api/:path*",
