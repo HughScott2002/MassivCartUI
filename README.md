@@ -319,6 +319,16 @@ Progress bar shown in left panel (ShoppingPreferences component)
 
 ---
 
+## Contributors
+
+| Contributor | Links |
+|---|---|
+| **Hugh Scott** — creator | [GitHub](https://github.com/HughScott2002) · [LinkedIn](https://www.linkedin.com/in/hugh-scott-3912421a5) · [Website](https://hughscott.dev) · [X](https://x.com/hughscottjr) |
+| **Mark Hinds** | [GitHub](https://github.com/pro-m16) · [LinkedIn](https://www.linkedin.com/in/mark-hinds-013367204) |
+| **Barrington Patterson** | [GitHub](https://github.com/barry-g1076) · [LinkedIn](https://www.linkedin.com/in/barrington-patterson-7b86aa22a) · [Portfolio](https://barrington-portfolio.vercel.app) |
+
+---
+
 ## License
 
 This project is licensed under the **MIT No Commercial License (MIT-NC)** — free to view, study, and fork for personal and educational use. Commercial use is not permitted. See [LICENSE](LICENSE) for details.
