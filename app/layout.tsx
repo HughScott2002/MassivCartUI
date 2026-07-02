@@ -21,47 +21,109 @@ export const viewport: Viewport = {
   ],
 }
 
+const SITE_URL = "https://www.massivcart.com"
+const SITE_NAME = "Massiv Cart AI"
+const SITE_TITLE = "Massiv Cart AI — Cheapest grocery prices in Jamaica"
+const SITE_DESCRIPTION =
+  "Find the cheapest place to buy your groceries anywhere in Jamaica. Search in plain English or snap a receipt — AI finds the cheapest stores near you."
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "MASSIV Cart AI",
-    template: "%s | MASSIV Cart AI",
+    default: SITE_TITLE,
+    template: "%s | Massiv Cart AI",
   },
-  description:
-    "Realtime price intelligence for almost anything. Find the cheapest prices near you, upload receipts to earn Scout Points, and let AI do the shopping math.",
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
   keywords: [
-    "price tracker",
-    "Jamaica",
-    "cheapest prices",
-    "AI shopping",
+    "grocery prices Jamaica",
+    "cheapest groceries Jamaica",
+    "price comparison Jamaica",
+    "AI shopping assistant",
     "receipt scanner",
-    "price intelligence",
+    "supermarket prices Jamaica",
   ],
-  authors: [{ name: "MASSIV Cart AI" }],
+  authors: [{ name: "Hugh Scott", url: "https://hughscott.dev" }],
+  creator: "Hugh Scott",
+  publisher: "Hugh Scott",
+  alternates: { canonical: "/" },
   openGraph: {
-    title: "MASSIV Cart AI",
-    description: "Find the cheapest grocery prices near you in Jamaica.",
-    siteName: "MASSIV Cart AI",
-    locale: "en_JM",
     type: "website",
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    locale: "en_JM",
   },
   twitter: {
     card: "summary_large_image",
-    title: "MASSIV Cart AI",
-    description: "Find the cheapest grocery prices near you in Jamaica.",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    creator: "@hughscottjr",
+    site: "@hughscottjr",
   },
-  icons: {
-    icon: [
-      { url: "/icon-light-32x32.png", media: "(prefers-color-scheme: light)" },
-      { url: "/icon-dark-32x32.png", media: "(prefers-color-scheme: dark)" },
-      { url: "/icon.svg", type: "image/svg+xml" },
-    ],
-    apple: "/apple-icon.png",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large" },
   },
-  verification: {
-    other: {
-      "claude-verify": "claude-site-verify-massivcart-2026",
+}
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Person",
+      "@id": `${SITE_URL}/#hugh`,
+      name: "Hugh Scott",
+      url: "https://hughscott.dev",
+      jobTitle: "Software Engineer",
+      sameAs: [
+        "https://github.com/HughScott2002",
+        "https://www.linkedin.com/in/hugh-scott-3912421a5",
+        "https://x.com/hughscottjr",
+      ],
     },
-  },
+    {
+      "@type": "Person",
+      "@id": `${SITE_URL}/#mark`,
+      name: "Mark Hinds",
+      url: "https://github.com/pro-m16",
+      sameAs: [
+        "https://github.com/pro-m16",
+        "https://www.linkedin.com/in/mark-hinds-013367204",
+      ],
+    },
+    {
+      "@type": "Person",
+      "@id": `${SITE_URL}/#barrington`,
+      name: "Barrington Patterson",
+      url: "https://barrington-portfolio.vercel.app",
+      sameAs: [
+        "https://github.com/barry-g1076",
+        "https://www.linkedin.com/in/barrington-patterson-7b86aa22a",
+        "https://barrington-portfolio.vercel.app",
+      ],
+    },
+    {
+      "@type": "WebApplication",
+      "@id": `${SITE_URL}/#app`,
+      name: SITE_NAME,
+      url: SITE_URL,
+      description: SITE_DESCRIPTION,
+      applicationCategory: "ShoppingApplication",
+      operatingSystem: "Web",
+      offers: { "@type": "Offer", price: "0", priceCurrency: "JMD" },
+      author: { "@id": `${SITE_URL}/#hugh` },
+      creator: { "@id": `${SITE_URL}/#hugh` },
+      contributor: [
+        { "@id": `${SITE_URL}/#hugh` },
+        { "@id": `${SITE_URL}/#mark` },
+        { "@id": `${SITE_URL}/#barrington` },
+      ],
+      areaServed: { "@type": "Country", name: "Jamaica" },
+    },
+  ],
 }
 
 export default function RootLayout({
@@ -81,6 +143,10 @@ export default function RootLayout({
       )}
     >
       <body>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         <ThemeProvider defaultTheme="dark">
           <QueryProvider>
             <AuthProvider>
