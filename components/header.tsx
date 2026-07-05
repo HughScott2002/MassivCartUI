@@ -8,10 +8,11 @@ import {
   Menu,
   X,
   Bell,
+  Github,
   User,
   LogOut,
 } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState, useSyncExternalStore } from "react"
 import { GridMenu } from "./grid-menu"
 import { NotificationBell } from "./notification-bell"
 import { useAuth } from "@/lib/auth-context"
@@ -24,6 +25,8 @@ const iconBtn =
 const rowBtn =
   "flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-medium text-foreground w-full text-left"
 
+const GITHUB_REPO_URL = "https://github.com/HughScott2002/MassivCartUI"
+const emptySubscribe = () => () => {}
 
 export function Header({
   locateRef,
@@ -35,10 +38,8 @@ export function Header({
   onCategoryChange?: (category: string) => void
 }) {
   const { resolvedTheme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
+  const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false)
   const [menuOpen, setMenuOpen] = useState(false)
-
-  useEffect(() => setMounted(true), [])
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [profilePopupOpen, setProfilePopupOpen] = useState(false)
   const { user, requireAuth, signOut } = useAuth()
@@ -91,6 +92,17 @@ export function Header({
           <>
             <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
             <div className="fixed top-16 right-4 z-50 flex min-w-55 flex-col items-stretch gap-1 rounded-2xl border border-border bg-popover p-3 shadow-xl">
+              <a
+                href={GITHUB_REPO_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={rowBtn}
+                onClick={() => setMenuOpen(false)}
+              >
+                <Github className="h-4 w-4 shrink-0" />
+                View source on GitHub
+              </a>
+
               <button className={rowBtn}>
                 <Bell className="h-4 w-4 shrink-0" />
                 Notifications
@@ -157,6 +169,17 @@ export function Header({
         <GridMenu selectedType={activeCategory} onSelect={onCategoryChange} />
 
         <NotificationBell />
+
+        <a
+          href={GITHUB_REPO_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={iconBtn}
+          aria-label="View source on GitHub"
+          title="View source on GitHub"
+        >
+          <Github className="h-4 w-4 text-foreground" />
+        </a>
 
         <button
           onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
