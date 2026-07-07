@@ -169,7 +169,7 @@ MassivCartUI/
 │   └── sample-shopping-list.txt    # Example list file for the upload feature
 ├── next.config.mjs                 # Rewrites: /api/pois + /api/admin/* → Next.js; all other /api/* → Express
 ├── package.json
-├── pnpm-lock.yaml
+├── bun.lock
 ├── postcss.config.mjs
 └── tsconfig.json
 ```
@@ -180,53 +180,56 @@ MassivCartUI/
 
 ### Prerequisites
 
-- Node.js 22+ and [pnpm](https://pnpm.io)
+- [Nix](https://nixos.org/download) with flakes — **or** Node.js 22+ and [Bun](https://bun.sh) installed manually
 - [Supabase](https://supabase.com) project with `stores`, `products`, `prices`, `users`, and `receipts` tables
 - [Mapbox](https://mapbox.com) access token
-- A running instance of [MassivCartAPI](https://github.com/HughScott2002/MassivCartAPI) (Express backend)
+- A running instance of [MassivCartAPI](https://github.com/HughScott2002/MassivCartAPI) (Express backend — `make up` in that repo)
 
-### 1. Clone & configure
+### 1. Clone & enter the dev shell
 
 ```bash
 git clone https://github.com/HughScott2002/MassivCartUI.git
 cd MassivCartUI
+nix develop        # provides bun + node 22; auto-runs bun install
 ```
 
-Copy `.env.example` to `.env.local` and fill in all values:
+Direnv users: `direnv allow` does the same on every `cd`.
+
+### 2. Configure
+
+Copy `.env.example` to `.env.local`. The Supabase defaults point at the
+**local stack** started by `make up` in MassivCartAPI (deterministic local
+development keys — no cloud account needed). Sign-up and email/password
+sign-in work against it out of the box; the Google sign-in button requires
+real OAuth credentials and stays non-functional locally.
+
+Fill in the rest as needed:
 
 ```env
-# Supabase (browser-safe)
-NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
-
-# Mapbox (browser-safe)
+# Mapbox (browser-safe) — required for the map view
 NEXT_PUBLIC_MAPBOX_TOKEN=<mapbox-access-token>
-
-# Express backend URL (server-side only — used by Next.js API route proxies)
-BACKEND_URL=http://localhost:8000
 
 # Optional: direct client-side API URL (leave blank to use Next.js proxy)
 NEXT_PUBLIC_API_URL=
-
-# Service role key — server-side only, used by /api/stores/submit to bypass RLS
-SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
 
 # Admin secret — must match PLACES_SYNC_SECRET in MassivCartAPI
 PLACES_SYNC_SECRET=<random-hex>
 ```
 
-### 2. Install & run
+Using **cloud Supabase** instead? Swap `NEXT_PUBLIC_SUPABASE_URL` and
+`NEXT_PUBLIC_SUPABASE_ANON_KEY` for your project's values.
+
+### 3. Run
 
 ```bash
-pnpm install
-pnpm dev        # Turbopack dev server at http://localhost:3000
+bun run dev     # Turbopack dev server at http://localhost:3000
 ```
 
-### 3. Build for production
+### 4. Build for production
 
 ```bash
-pnpm build
-pnpm start
+bun run build
+bun run start
 ```
 
 ---
@@ -235,12 +238,12 @@ pnpm start
 
 | Command | Description |
 |---|---|
-| `pnpm dev` | Start dev server with Turbopack (`next dev --turbopack`) |
-| `pnpm build` | Production build (`next build`) |
-| `pnpm start` | Start production server (`next start`) |
-| `pnpm lint` | Run ESLint |
-| `pnpm format` | Prettier — format all `.ts` / `.tsx` files |
-| `pnpm typecheck` | TypeScript type check without emitting (`tsc --noEmit`) |
+| `bun run dev` | Start dev server with Turbopack (`next dev --turbopack`) |
+| `bun run build` | Production build (`next build`) |
+| `bun run start` | Start production server (`next start`) |
+| `bun run lint` | Run ESLint |
+| `bun run format` | Prettier — format all `.ts` / `.tsx` files |
+| `bun run typecheck` | TypeScript type check without emitting (`tsc --noEmit`) |
 
 ---
 
