@@ -7,6 +7,13 @@
 </p>
 
 <p align="center">
+  <img src="https://img.shields.io/badge/🚧_VISION_TOOLCHAIN-UNDER_MAINTENANCE-f59e0b?style=for-the-badge" alt="Vision toolchain under maintenance" />
+</p>
+<p align="center">
+  <sub><strong>Receipt scanning is temporarily down</strong> — I'm reworking the vision pipeline right now. Everything else works.</sub>
+</p>
+
+<p align="center">
   <a href="#quick-start"><img src="https://img.shields.io/badge/-Quick_Start-00d26a?style=for-the-badge" alt="Quick Start" /></a>&nbsp;
   <a href="#features"><img src="https://img.shields.io/badge/-Features-00d26a?style=for-the-badge" alt="Features" /></a>&nbsp;
   <a href="#architecture"><img src="https://img.shields.io/badge/-Architecture-00d26a?style=for-the-badge" alt="Architecture" /></a>
@@ -169,7 +176,7 @@ MassivCartUI/
 │   └── sample-shopping-list.txt    # Example list file for the upload feature
 ├── next.config.mjs                 # Rewrites: /api/pois + /api/admin/* → Next.js; all other /api/* → Express
 ├── package.json
-├── pnpm-lock.yaml
+├── bun.lock
 ├── postcss.config.mjs
 └── tsconfig.json
 ```
@@ -178,55 +185,86 @@ MassivCartUI/
 
 ## Quick Start
 
-### Prerequisites
+### Dependencies
 
-- Node.js 22+ and [pnpm](https://pnpm.io)
-- [Supabase](https://supabase.com) project with `stores`, `products`, `prices`, `users`, and `receipts` tables
-- [Mapbox](https://mapbox.com) access token
-- A running instance of [MassivCartAPI](https://github.com/HughScott2002/MassivCartAPI) (Express backend)
+Everything the dev environment needs, and what each piece is for:
 
-### 1. Clone & configure
+| Dependency | Required? | What it's for |
+|---|---|---|
+| [MassivCartAPI](https://github.com/HughScott2002/MassivCartAPI) running locally | **Yes** | The Express backend *and* the local Supabase stack (database + sign-in) — `make up` in that repo starts both |
+| [Mapbox access token](https://console.mapbox.com/) | **Yes** for the map | The store map view. Free account; use a public `pk.` token. Everything else renders without it |
+| [Nix](https://nixos.org/download) with flakes | Recommended | Provides the exact Bun and Node 22 versions (see below) |
+| Node.js 22+ and [Bun](https://bun.sh) | Only without Nix | Manual alternative to the Nix shell |
+
+Sign-in (email/password) and all data come from the local Supabase stack
+started by MassivCartAPI — no cloud Supabase account needed. The Google
+sign-in button is the one exception: it needs real OAuth credentials and
+stays non-functional locally.
+
+#### What is Nix, and why is it here?
+
+[Nix](https://nixos.org/download) is a package manager that reads this
+repo's `flake.nix` and drops you into a shell with the **exact same
+toolchain versions on every machine** (pinned in `flake.lock`) — nothing
+installed globally, nothing to uninstall later. Usage:
+
+```bash
+nix develop    # enter the dev shell (first run downloads the toolchain)
+exit           # leave it — your system is untouched
+```
+
+If you use [direnv](https://direnv.net), `direnv allow` once makes the
+shell load automatically every time you `cd` in. Flakes may need enabling
+on a fresh Nix install — add `experimental-features = nix-command flakes`
+to `~/.config/nix/nix.conf` (the [Determinate installer](https://determinate.systems/nix-installer/)
+ships with this on).
+
+Don't want Nix? Install Node 22+ and Bun yourself and every command below
+works the same.
+
+### 1. Clone & enter the dev shell
 
 ```bash
 git clone https://github.com/HughScott2002/MassivCartUI.git
 cd MassivCartUI
+nix develop        # provides bun + node 22; auto-runs bun install
 ```
 
-Copy `.env.example` to `.env.local` and fill in all values:
+### 2. Configure
+
+Copy `.env.example` to `.env.local`. The Supabase defaults point at the
+**local stack** started by `make up` in MassivCartAPI (deterministic local
+development keys — no cloud account needed). Sign-up and email/password
+sign-in work against it out of the box; the Google sign-in button requires
+real OAuth credentials and stays non-functional locally.
+
+Fill in the rest as needed:
 
 ```env
-# Supabase (browser-safe)
-NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
-
-# Mapbox (browser-safe)
+# Mapbox (browser-safe) — required for the map view
 NEXT_PUBLIC_MAPBOX_TOKEN=<mapbox-access-token>
-
-# Express backend URL (server-side only — used by Next.js API route proxies)
-BACKEND_URL=http://localhost:8000
 
 # Optional: direct client-side API URL (leave blank to use Next.js proxy)
 NEXT_PUBLIC_API_URL=
-
-# Service role key — server-side only, used by /api/stores/submit to bypass RLS
-SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
 
 # Admin secret — must match PLACES_SYNC_SECRET in MassivCartAPI
 PLACES_SYNC_SECRET=<random-hex>
 ```
 
-### 2. Install & run
+Using **cloud Supabase** instead? Swap `NEXT_PUBLIC_SUPABASE_URL` and
+`NEXT_PUBLIC_SUPABASE_ANON_KEY` for your project's values.
+
+### 3. Run
 
 ```bash
-pnpm install
-pnpm dev        # Turbopack dev server at http://localhost:3000
+bun run dev     # Turbopack dev server at http://localhost:3000
 ```
 
-### 3. Build for production
+### 4. Build for production
 
 ```bash
-pnpm build
-pnpm start
+bun run build
+bun run start
 ```
 
 ---
@@ -235,12 +273,12 @@ pnpm start
 
 | Command | Description |
 |---|---|
-| `pnpm dev` | Start dev server with Turbopack (`next dev --turbopack`) |
-| `pnpm build` | Production build (`next build`) |
-| `pnpm start` | Start production server (`next start`) |
-| `pnpm lint` | Run ESLint |
-| `pnpm format` | Prettier — format all `.ts` / `.tsx` files |
-| `pnpm typecheck` | TypeScript type check without emitting (`tsc --noEmit`) |
+| `bun run dev` | Start dev server with Turbopack (`next dev --turbopack`) |
+| `bun run build` | Production build (`next build`) |
+| `bun run start` | Start production server (`next start`) |
+| `bun run lint` | Run ESLint |
+| `bun run format` | Prettier — format all `.ts` / `.tsx` files |
+| `bun run typecheck` | TypeScript type check without emitting (`tsc --noEmit`) |
 
 ---
 
