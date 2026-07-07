@@ -185,80 +185,63 @@ MassivCartUI/
 
 ## Quick Start
 
-### Dependencies
-
-Everything the dev environment needs, and what each piece is for:
-
-| Dependency | Required? | What it's for |
-|---|---|---|
-| [MassivCartAPI](https://github.com/HughScott2002/MassivCartAPI) running locally | **Yes** | The Express backend *and* the local Supabase stack (database + sign-in) — `make up` in that repo starts both |
-| [Mapbox access token](https://console.mapbox.com/) | **Yes** for the map | The store map view. Free account; use a public `pk.` token. Everything else renders without it |
-| [Nix](https://nixos.org/download) with flakes | Recommended | Provides the exact Bun and Node 22 versions (see below) |
-| Node.js 22+ and [Bun](https://bun.sh) | Only without Nix | Manual alternative to the Nix shell |
-
-Sign-in (email/password) and all data come from the local Supabase stack
-started by MassivCartAPI — no cloud Supabase account needed. The Google
-sign-in button is the one exception: it needs real OAuth credentials and
-stays non-functional locally.
-
-#### What is Nix, and why is it here?
-
-[Nix](https://nixos.org/download) is a package manager that reads this
-repo's `flake.nix` and drops you into a shell with the **exact same
-toolchain versions on every machine** (pinned in `flake.lock`) — nothing
-installed globally, nothing to uninstall later. Usage:
-
-```bash
-nix develop    # enter the dev shell (first run downloads the toolchain)
-exit           # leave it — your system is untouched
-```
-
-If you use [direnv](https://direnv.net), `direnv allow` once makes the
-shell load automatically every time you `cd` in. Flakes may need enabling
-on a fresh Nix install — add `experimental-features = nix-command flakes`
-to `~/.config/nix/nix.conf` (the [Determinate installer](https://determinate.systems/nix-installer/)
-ships with this on).
-
-Don't want Nix? Install Node 22+ and Bun yourself and every command below
-works the same.
+You need [MassivCartAPI](https://github.com/HughScott2002/MassivCartAPI)
+running locally (`make up` over there starts the backend **and** the local
+Supabase database + sign-in), plus a toolchain —
+[Nix](https://nixos.org/download) gives you the right one in one command, or
+install Node 22+ and [Bun](https://bun.sh) yourself.
 
 ### 1. Clone & enter the dev shell
 
 ```bash
 git clone https://github.com/HughScott2002/MassivCartUI.git
 cd MassivCartUI
-nix develop        # provides bun + node 22; auto-runs bun install
+nix develop   # no Nix? skip this line — you're using your own Node/Bun
 ```
 
-### 2. Configure
+<details>
+<summary><b>What is Nix?</b> (and direnv, and enabling flakes)</summary>
 
-Copy `.env.example` to `.env.local`. The Supabase defaults point at the
-**local stack** started by `make up` in MassivCartAPI (deterministic local
-development keys — no cloud account needed). Sign-up and email/password
-sign-in work against it out of the box; the Google sign-in button requires
-real OAuth credentials and stays non-functional locally.
+Nix reads this repo's `flake.nix` and drops you into a shell with the exact
+toolchain versions pinned in `flake.lock` — same on every machine, nothing
+installed globally, `exit` leaves your system untouched. First run downloads
+the toolchain and runs `bun install` for you.
 
-Fill in the rest as needed:
+- Fresh Nix install? Enable flakes: add `experimental-features = nix-command flakes`
+  to `~/.config/nix/nix.conf` (the [Determinate installer](https://determinate.systems/nix-installer/) ships with this on).
+- [direnv](https://direnv.net) user? `direnv allow` once, and the shell loads
+  automatically on every `cd`.
+
+</details>
+
+### 2. Run
+
+```bash
+cp .env.example .env.local   # defaults hit the local stack — no editing needed
+bun run dev                  # Turbopack dev server at http://localhost:3000
+```
+
+Sign-up and email/password sign-in work out of the box against the local
+Supabase stack. The Google sign-in button is the one exception — it needs
+real OAuth credentials.
+
+### 3. Optional extras in `.env.local`
 
 ```env
-# Mapbox (browser-safe) — required for the map view
+# Mapbox — unlocks the store map view (free account, public pk. token);
+# everything else renders without it
 NEXT_PUBLIC_MAPBOX_TOKEN=<mapbox-access-token>
 
-# Optional: direct client-side API URL (leave blank to use Next.js proxy)
+# Direct client-side API URL (leave blank to use the Next.js proxy)
 NEXT_PUBLIC_API_URL=
 
-# Admin secret — must match PLACES_SYNC_SECRET in MassivCartAPI
+# Admin secret — must match PLACES_SYNC_SECRET in the MassivCartAPI .env
 PLACES_SYNC_SECRET=<random-hex>
 ```
 
-Using **cloud Supabase** instead? Swap `NEXT_PUBLIC_SUPABASE_URL` and
-`NEXT_PUBLIC_SUPABASE_ANON_KEY` for your project's values.
-
-### 3. Run
-
-```bash
-bun run dev     # Turbopack dev server at http://localhost:3000
-```
+Using **cloud Supabase** instead of the local stack? Swap
+`NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` for your
+project's values.
 
 ### 4. Build for production
 
