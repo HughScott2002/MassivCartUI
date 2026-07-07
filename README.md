@@ -178,12 +178,42 @@ MassivCartUI/
 
 ## Quick Start
 
-### Prerequisites
+### Dependencies
 
-- [Nix](https://nixos.org/download) with flakes — **or** Node.js 22+ and [Bun](https://bun.sh) installed manually
-- [Supabase](https://supabase.com) project with `stores`, `products`, `prices`, `users`, and `receipts` tables
-- [Mapbox](https://mapbox.com) access token
-- A running instance of [MassivCartAPI](https://github.com/HughScott2002/MassivCartAPI) (Express backend — `make up` in that repo)
+Everything the dev environment needs, and what each piece is for:
+
+| Dependency | Required? | What it's for |
+|---|---|---|
+| [MassivCartAPI](https://github.com/HughScott2002/MassivCartAPI) running locally | **Yes** | The Express backend *and* the local Supabase stack (database + sign-in) — `make up` in that repo starts both |
+| [Mapbox access token](https://console.mapbox.com/) | **Yes** for the map | The store map view. Free account; use a public `pk.` token. Everything else renders without it |
+| [Nix](https://nixos.org/download) with flakes | Recommended | Provides the exact Bun and Node 22 versions (see below) |
+| Node.js 22+ and [Bun](https://bun.sh) | Only without Nix | Manual alternative to the Nix shell |
+
+Sign-in (email/password) and all data come from the local Supabase stack
+started by MassivCartAPI — no cloud Supabase account needed. The Google
+sign-in button is the one exception: it needs real OAuth credentials and
+stays non-functional locally.
+
+#### What is Nix, and why is it here?
+
+[Nix](https://nixos.org/download) is a package manager that reads this
+repo's `flake.nix` and drops you into a shell with the **exact same
+toolchain versions on every machine** (pinned in `flake.lock`) — nothing
+installed globally, nothing to uninstall later. Usage:
+
+```bash
+nix develop    # enter the dev shell (first run downloads the toolchain)
+exit           # leave it — your system is untouched
+```
+
+If you use [direnv](https://direnv.net), `direnv allow` once makes the
+shell load automatically every time you `cd` in. Flakes may need enabling
+on a fresh Nix install — add `experimental-features = nix-command flakes`
+to `~/.config/nix/nix.conf` (the [Determinate installer](https://determinate.systems/nix-installer/)
+ships with this on).
+
+Don't want Nix? Install Node 22+ and Bun yourself and every command below
+works the same.
 
 ### 1. Clone & enter the dev shell
 
@@ -192,8 +222,6 @@ git clone https://github.com/HughScott2002/MassivCartUI.git
 cd MassivCartUI
 nix develop        # provides bun + node 22; auto-runs bun install
 ```
-
-Direnv users: `direnv allow` does the same on every `cd`.
 
 ### 2. Configure
 
