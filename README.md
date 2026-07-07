@@ -7,6 +7,13 @@
 </p>
 
 <p align="center">
+  <img src="https://img.shields.io/badge/🚧_VISION_TOOLCHAIN-UNDER_MAINTENANCE-f59e0b?style=for-the-badge" alt="Vision toolchain under maintenance" />
+</p>
+<p align="center">
+  <sub><strong>Receipt scanning is temporarily down</strong> — I'm reworking the vision pipeline right now. Everything else works.</sub>
+</p>
+
+<p align="center">
   <a href="#quick-start"><img src="https://img.shields.io/badge/-Quick_Start-00d26a?style=for-the-badge" alt="Quick Start" /></a>&nbsp;
   <a href="#features"><img src="https://img.shields.io/badge/-Features-00d26a?style=for-the-badge" alt="Features" /></a>&nbsp;
   <a href="#architecture"><img src="https://img.shields.io/badge/-Architecture-00d26a?style=for-the-badge" alt="Architecture" /></a>
