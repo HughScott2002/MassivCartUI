@@ -185,7 +185,7 @@ MassivCartUI/
 
 ## Quick Start
 
-You need [MassivCartAPI](https://github.com/HughScott2002/MassivCartAPI)
+You need [MassivCartAPI](https://github.com/HughScott2002/MassivCart-Server)
 running locally (`make up` over there starts the backend **and** the local
 Supabase database + sign-in), plus a toolchain —
 [Nix](https://nixos.org/download) gives you the right one in one command, or
@@ -330,7 +330,7 @@ Progress bar shown in left panel (ShoppingPreferences component)
 | Repo | Description |
 |---|---|
 | **MassivCartUI** (this repo) | Next.js 16 frontend — map, command bar, receipt upload, budget tracker |
-| **[MassivCartAPI](https://github.com/HughScott2002/MassivCartAPI)** | Express 5 backend — Claude AI, receipt OCR, Upstash Redis, Supabase |
+| **[MassivCartAPI](https://github.com/HughScott2002/MassivCart-Server)** | Express 5 backend — Claude AI, receipt OCR, Upstash Redis, Supabase |
 
 ---
 
