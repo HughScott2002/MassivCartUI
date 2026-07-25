@@ -3,7 +3,7 @@ export interface SearchResultPrice {
   store_name: string
   branch: string | null
   parish: string | null
-  neighbourhood: string | null
+  neighbourhood?: string | null
   place_id: string | null
   price: number
   confidence_score: number | null

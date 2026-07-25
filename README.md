@@ -7,6 +7,13 @@
 </p>
 
 <p align="center">
+  <img src="https://img.shields.io/badge/🚧_VISION_TOOLCHAIN-UNDER_MAINTENANCE-f59e0b?style=for-the-badge" alt="Vision toolchain under maintenance" />
+</p>
+<p align="center">
+  <sub><strong>Receipt scanning is temporarily down</strong> — I'm reworking the vision pipeline right now. Everything else works.</sub>
+</p>
+
+<p align="center">
   <a href="#quick-start"><img src="https://img.shields.io/badge/-Quick_Start-00d26a?style=for-the-badge" alt="Quick Start" /></a>&nbsp;
   <a href="#features"><img src="https://img.shields.io/badge/-Features-00d26a?style=for-the-badge" alt="Features" /></a>&nbsp;
   <a href="#architecture"><img src="https://img.shields.io/badge/-Architecture-00d26a?style=for-the-badge" alt="Architecture" /></a>
@@ -169,7 +176,7 @@ MassivCartUI/
 │   └── sample-shopping-list.txt    # Example list file for the upload feature
 ├── next.config.mjs                 # Rewrites: /api/pois + /api/admin/* → Next.js; all other /api/* → Express
 ├── package.json
-├── pnpm-lock.yaml
+├── bun.lock
 ├── postcss.config.mjs
 └── tsconfig.json
 ```
@@ -178,55 +185,69 @@ MassivCartUI/
 
 ## Quick Start
 
-### Prerequisites
+You need [MassivCartAPI](https://github.com/HughScott2002/MassivCart-Server)
+running locally (`make up` over there starts the backend **and** the local
+Supabase database + sign-in), plus a toolchain —
+[Nix](https://nixos.org/download) gives you the right one in one command, or
+install Node 22+ and [Bun](https://bun.sh) yourself.
 
-- Node.js 22+ and [pnpm](https://pnpm.io)
-- [Supabase](https://supabase.com) project with `stores`, `products`, `prices`, `users`, and `receipts` tables
-- [Mapbox](https://mapbox.com) access token
-- A running instance of [MassivCartAPI](https://github.com/HughScott2002/MassivCartAPI) (Express backend)
-
-### 1. Clone & configure
+### 1. Clone & enter the dev shell
 
 ```bash
 git clone https://github.com/HughScott2002/MassivCartUI.git
 cd MassivCartUI
+nix develop   # no Nix? skip this line — you're using your own Node/Bun
 ```
 
-Copy `.env.example` to `.env.local` and fill in all values:
+<details>
+<summary><b>What is Nix?</b> (and direnv, and enabling flakes)</summary>
+
+Nix reads this repo's `flake.nix` and drops you into a shell with the exact
+toolchain versions pinned in `flake.lock` — same on every machine, nothing
+installed globally, `exit` leaves your system untouched. First run downloads
+the toolchain and runs `bun install` for you.
+
+- Fresh Nix install? Enable flakes: add `experimental-features = nix-command flakes`
+  to `~/.config/nix/nix.conf` (the [Determinate installer](https://determinate.systems/nix-installer/) ships with this on).
+- [direnv](https://direnv.net) user? `direnv allow` once, and the shell loads
+  automatically on every `cd`.
+
+</details>
+
+### 2. Run
+
+```bash
+cp .env.example .env.local   # defaults hit the local stack — no editing needed
+bun run dev                  # Turbopack dev server at http://localhost:3000
+```
+
+Sign-up and email/password sign-in work out of the box against the local
+Supabase stack. The Google sign-in button is the one exception — it needs
+real OAuth credentials.
+
+### 3. Optional extras in `.env.local`
 
 ```env
-# Supabase (browser-safe)
-NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
-
-# Mapbox (browser-safe)
+# Mapbox — unlocks the store map view (free account, public pk. token);
+# everything else renders without it
 NEXT_PUBLIC_MAPBOX_TOKEN=<mapbox-access-token>
 
-# Express backend URL (server-side only — used by Next.js API route proxies)
-BACKEND_URL=http://localhost:8000
-
-# Optional: direct client-side API URL (leave blank to use Next.js proxy)
+# Direct client-side API URL (leave blank to use the Next.js proxy)
 NEXT_PUBLIC_API_URL=
 
-# Service role key — server-side only, used by /api/stores/submit to bypass RLS
-SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
-
-# Admin secret — must match PLACES_SYNC_SECRET in MassivCartAPI
+# Admin secret — must match PLACES_SYNC_SECRET in the MassivCartAPI .env
 PLACES_SYNC_SECRET=<random-hex>
 ```
 
-### 2. Install & run
+Using **cloud Supabase** instead of the local stack? Swap
+`NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` for your
+project's values.
+
+### 4. Build for production
 
 ```bash
-pnpm install
-pnpm dev        # Turbopack dev server at http://localhost:3000
-```
-
-### 3. Build for production
-
-```bash
-pnpm build
-pnpm start
+bun run build
+bun run start
 ```
 
 ---
@@ -235,12 +256,12 @@ pnpm start
 
 | Command | Description |
 |---|---|
-| `pnpm dev` | Start dev server with Turbopack (`next dev --turbopack`) |
-| `pnpm build` | Production build (`next build`) |
-| `pnpm start` | Start production server (`next start`) |
-| `pnpm lint` | Run ESLint |
-| `pnpm format` | Prettier — format all `.ts` / `.tsx` files |
-| `pnpm typecheck` | TypeScript type check without emitting (`tsc --noEmit`) |
+| `bun run dev` | Start dev server with Turbopack (`next dev --turbopack`) |
+| `bun run build` | Production build (`next build`) |
+| `bun run start` | Start production server (`next start`) |
+| `bun run lint` | Run ESLint |
+| `bun run format` | Prettier — format all `.ts` / `.tsx` files |
+| `bun run typecheck` | TypeScript type check without emitting (`tsc --noEmit`) |
 
 ---
 
@@ -309,13 +330,23 @@ Progress bar shown in left panel (ShoppingPreferences component)
 | Repo | Description |
 |---|---|
 | **MassivCartUI** (this repo) | Next.js 16 frontend — map, command bar, receipt upload, budget tracker |
-| **[MassivCartAPI](https://github.com/HughScott2002/MassivCartAPI)** | Express 5 backend — Claude AI, receipt OCR, Upstash Redis, Supabase |
+| **[MassivCartAPI](https://github.com/HughScott2002/MassivCart-Server)** | Express 5 backend — Claude AI, receipt OCR, Upstash Redis, Supabase |
 
 ---
 
 ## Built With
 
 **Massiv Cart AI** was built in 24 hours at the [Intellibus Hackathon](https://intellibus.com) (March 2026).
+
+---
+
+## Contributors
+
+| Contributor | Links |
+|---|---|
+| **Hugh Scott** — creator | [GitHub](https://github.com/HughScott2002) · [LinkedIn](https://www.linkedin.com/in/hugh-scott-3912421a5) · [Website](https://hughscott.dev) · [X](https://x.com/hughscottjr) |
+| **Mark Hinds** | [GitHub](https://github.com/pro-m16) · [LinkedIn](https://www.linkedin.com/in/mark-hinds-013367204) |
+| **Barrington Patterson** | [GitHub](https://github.com/barry-g1076) · [LinkedIn](https://www.linkedin.com/in/barrington-patterson-7b86aa22a) · [Portfolio](https://barrington-portfolio.vercel.app) |
 
 ---
 
