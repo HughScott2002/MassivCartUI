@@ -29,6 +29,8 @@
   <img src="https://img.shields.io/badge/TanStack_Query-5.x-FF4154?logo=reactquery&logoColor=white" alt="TanStack Query 5" />
 </p>
 
+<img width="1665" height="1342" alt="Screenshot 2026-08-04 171659" src="https://github.com/user-attachments/assets/7ccde325-7aa0-4a70-baa0-66396268bf24" />
+
 ---
 
 ## What Is This?
