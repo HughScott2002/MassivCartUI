@@ -29,11 +29,14 @@
   <img src="https://img.shields.io/badge/TanStack_Query-5.x-FF4154?logo=reactquery&logoColor=white" alt="TanStack Query 5" />
 </p>
 
+## MASSIV Cart
+<img width="1665" height="1342" alt="Screenshot 2026-08-04 171659" src="https://github.com/user-attachments/assets/7ccde325-7aa0-4a70-baa0-66396268bf24" />
+
 ---
 
 ## What Is This?
 
-**Massiv Cart AI** is a Jamaican grocery price intelligence app. Type "cheapest cooking oil near me" into the command bar, the AI parses your intent, and the map flies to the cheapest store. Upload a photo of your receipt to earn Scout Points. Drop a `.txt` shopping list and get prices auto-filled from every store near you.
+**MASSIV Cart AI** is a Jamaican grocery price intelligence app. Type "cheapest cooking oil near me" into the command bar, the AI parses your intent, and the map flies to the cheapest store. Upload a photo of your receipt to earn Scout Points. Drop a `.txt` shopping list and get prices auto-filled from every store near you.
 
 ---
 
